@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  aws:
+    container_name: aws
+    build: 
+      context: .
+    env_file: .env
+    restart: always
+    volumes:
+      - ./bin:/app/bin
+      - ./lib:/app/lib
+      - ./test:/app/test
+      - ./cdk.out:/app/cdk.out
+      # files
+      - ./package.json:/app/package.json
+      - ./cdk.json:/app/cdk.json

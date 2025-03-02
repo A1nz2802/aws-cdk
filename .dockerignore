@@ -1,0 +1,12 @@
+*
+!/bin
+!/lib
+!/test
+
+!/cdk.json
+!/config
+
+!/package.json
+!/pnpm-lock.yaml
+!/tsconfig.json
+!/README.md
