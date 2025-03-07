@@ -1,0 +1,159 @@
+/* 
+# Amazon EBS Volume Lab
+
+## Launch Instances in two AZs
+
+1. Launch an instance using the Amazon Linux AMI in us-east-1a
+2. Launch another instance using the Amazon Linux AMI in us-east-1b
+
+## Create and Attach an EBS Volume
+1. Create a 10GB gp2 volume in us-east-1a with a name tag of 'MyEBS'
+2. List non-loopback block devices on instance
+sudo lsblk -e7
+3. Attach the volume to the instance in us-east-1a
+4. Rerun the command to view block devices
+
+## Create a filesystem and mount the volume
+1. Create a filesystem on the EBS volume
+sudo mkfs -t ext4 /dev/xvdf
+2. Create a mount point for the EBS volume
+sudo mkdir /data
+3. Mount the EBS volume to the mount point
+sudo mount /dev/xvdf /data
+4. Make the volume mount persistent
+Run: 'sudo nano /etc/fstab' then add '/dev/xvdf /data ext4 defaults,nofail 0 2' and save the file
+
+## Add some data to the volume
+
+1. Change to the /data mount point directory
+2. Create some files and folders
+
+## Take a snapshot and move the volume to us-east-1b
+
+1. Take a snapshot of the data volume
+2. Create a new EBS volume from the snapshot in us-east-1b
+3. Mount the new EBS volume to the instance in us-east-1b
+4. Change to the /data mount point and view the data
+*/
+import { Fn, Size, Stack, StackProps } from 'aws-cdk-lib';
+import { CfnInstance, CfnInternetGateway, CfnRoute, CfnRouteTable, CfnSecurityGroup, CfnSnapshotBlockPublicAccess, CfnSubnet, CfnSubnetRouteTableAssociation, CfnVolume, CfnVPC, CfnVPCGatewayAttachment, EbsDeviceVolumeType, UserData, Volume, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { Construct } from 'constructs';
+
+export class Ex3Stack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    //* Create VPC
+    const vpc = new CfnVPC(this, 'MyVPC', {
+      cidrBlock: '10.0.0.0/16',
+      enableDnsHostnames: true,
+      enableDnsSupport: true,
+      instanceTenancy: 'default',
+      tags: [{key: 'project', value: 'myapp'}, {key: 'Name', value: 'MyVpc'}]
+    })
+
+    //* Create Subnets
+    const subnet1 = new CfnSubnet(this, 'MySubnet-1', {
+      vpcId: vpc.attrVpcId,
+      cidrBlock: '10.0.1.0/24',
+      availabilityZone: 'us-east-1a',
+      mapPublicIpOnLaunch: true,
+      tags: [{key: 'project', value: 'myapp'}, {key: 'Name', value: 'MySubnet-1'}]
+    })
+
+    const subnet2 = new CfnSubnet(this, 'MySubnet-2', {
+      vpcId: vpc.attrVpcId,
+      cidrBlock: '10.0.2.0/24',
+      availabilityZone: 'us-east-1b',
+      tags: [{key: 'project', value: 'myapp'}, {key: 'Name', value: 'MySubnet-2'}]
+    })
+
+    //* Create Public Route Table
+    const route = new CfnRouteTable(this, 'MyPublic-RT', {
+      vpcId: vpc.attrVpcId,
+      tags: [{key: 'project', value: 'myapp'}, {key: 'Name', value: 'MyPublic-RT'}]
+    })
+
+    //* Attach Route table to subnets
+    new CfnSubnetRouteTableAssociation(this, 'AttachRtToSubnet1', {
+      subnetId: subnet1.attrSubnetId,
+      routeTableId: route.attrRouteTableId,
+    })
+
+    new CfnSubnetRouteTableAssociation(this, 'AttachRtToSubnet2', {
+      subnetId: subnet2.attrSubnetId,
+      routeTableId: route.attrRouteTableId,
+    })
+
+    //* Create Internet Gateway
+    const igw = new CfnInternetGateway(this, 'MyIGW', {
+      tags: [{key: 'project', value: 'myapp'}, {key: 'Name', value: 'MyIGW'}]
+    })
+
+    //* Attach IGW to VPC
+    new CfnVPCGatewayAttachment(this, 'AttachVpcToIgw', {
+      vpcId: vpc.attrVpcId,
+      internetGatewayId: igw.attrInternetGatewayId,
+    })
+
+    //* Add new route to route table
+    new CfnRoute(this, 'IgwRoute', {
+      routeTableId: route.attrRouteTableId,
+      destinationCidrBlock: '0.0.0.0/0',
+      gatewayId: igw.attrInternetGatewayId,
+    })
+
+    //* Add EBS Volume
+    const ebs = new Volume(this, 'MyEBS', {
+      volumeName: 'MyEBS',
+      volumeType: EbsDeviceVolumeType.GENERAL_PURPOSE_SSD_GP3,
+      size: Size.gibibytes(10),
+      iops: 3000,
+      throughput: 125,
+      availabilityZone: 'us-east-1a',
+    })
+
+    const securityGroup = new CfnSecurityGroup(this, 'MySG', {
+      vpcId: vpc.attrVpcId,
+      groupName: 'SGWebAccess',
+      groupDescription: 'SG for my custom VPC',
+      securityGroupIngress: [{
+        ipProtocol: 'tcp',
+        toPort: 22,
+        fromPort: 22,
+        cidrIp: '0.0.0.0/0',
+        description: 'anywhere rule :p',
+      }],
+      tags: [{key: 'project', value: 'myapp'}, {key: 'Name', value: 'WebAccessMyVPC'}]
+    })
+
+    const userData = UserData.forLinux();
+    userData.addCommands(
+      'sudo mkfs -t ext4 /dev/xvdy',
+      'sudo mkdir /home/ec2-user/data',
+      'sudo mount /dev/xvdy /data',
+      'sudo echo "UUID=$(blkid -s UUID -o value /dev/xvdy) /data ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab',
+    );
+    
+    //* Create 2 Ec2 Instance
+    new CfnInstance(this, 'MyInstace-1', {
+      imageId: 'ami-05b10e08d247fb927',
+      instanceType: 't2.micro',
+      subnetId: subnet1.attrSubnetId,
+      securityGroupIds: [securityGroup.attrId],
+      volumes: [{
+        device: '/dev/sdy',
+        volumeId: ebs.volumeId,
+      }],
+      userData: Fn.base64(userData.render()),
+      tags: [{key: 'project', value: 'myapp'}, {key: 'Name', value: 'MyInstace-1'}]
+    })
+
+    /* const instance2 = new CfnInstance(this, 'MyInstance-2', {
+      imageId: 'ami-05b10e08d247fb927',
+      instanceType: 't2.micro',
+      subnetId: subnet2.attrSubnetId,
+      tags: [{key: 'project', value: 'myapp'}, {key: 'Name', value: 'MyInstance-2'}]
+    }) */
+  }
+}
