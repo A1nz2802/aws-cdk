@@ -1,0 +1,253 @@
+Description: coolest stack :)
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: MyVpc
+        - Key: project
+          Value: myapp
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/MyVPC
+  Public1A:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Public-1A
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/Public-1A
+  Public1B:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1b
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Public-1B
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/Public-1B
+  Private1A:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 10.0.3.0/24
+      Tags:
+        - Key: Name
+          Value: Private-1A
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/Private-1A
+  Private1B:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1b
+      CidrBlock: 10.0.4.0/24
+      Tags:
+        - Key: Name
+          Value: Private-1B
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/Private-1B
+  PublicRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Public-RT
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/Public-RT
+  PrivateRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Private-RT
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/Private-RT
+  AttachPubRtToSubnet1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Fn::GetAtt:
+          - PublicRT
+          - RouteTableId
+      SubnetId:
+        Fn::GetAtt:
+          - Public1A
+          - SubnetId
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/AttachPubRtToSubnet1
+  AttachPubRtToSubnet2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Fn::GetAtt:
+          - PublicRT
+          - RouteTableId
+      SubnetId:
+        Fn::GetAtt:
+          - Public1B
+          - SubnetId
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/AttachPubRtToSubnet2
+  AttachPrivRtToSubnet3:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Fn::GetAtt:
+          - PrivateRT
+          - RouteTableId
+      SubnetId:
+        Fn::GetAtt:
+          - Private1A
+          - SubnetId
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/AttachPrivRtToSubnet3
+  AttachPrivRtToSubnet4:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Fn::GetAtt:
+          - PrivateRT
+          - RouteTableId
+      SubnetId:
+        Fn::GetAtt:
+          - Private1B
+          - SubnetId
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/AttachPrivRtToSubnet4
+  MyIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyIGW
+        - Key: project
+          Value: myapp
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/MyIGW
+  AttachVpcToIgw:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Fn::GetAtt:
+          - MyIGW
+          - InternetGatewayId
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/AttachVpcToIgw
+  IgwRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Fn::GetAtt:
+          - MyIGW
+          - InternetGatewayId
+      RouteTableId:
+        Fn::GetAtt:
+          - PublicRT
+          - RouteTableId
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/IgwRoute
+  MySG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG for my custom VPC
+      GroupName: SGWebAccess
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: anywhere rule :p
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+      Tags:
+        - Key: Name
+          Value: WebAccessMyVPC
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/MySG
+  MyEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-05b10e08d247fb927
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - Fn::GetAtt:
+            - MySG
+            - Id
+      SubnetId:
+        Fn::GetAtt:
+          - Public1B
+          - SubnetId
+      Tags:
+        - Key: Name
+          Value: MyEC2
+        - Key: project
+          Value: myapp
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/MyEC2
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/0WMTQuDMBBEf4v3mGrooVfxIL0VLb2WNa40fmxKsqmI+N+LteBpZt7AUzK9JDKJYPKxbvp4MLVcKgbdC5j8E7WSS97S45aLvKUq1IS8tdIGxjvUAx78YJn3VhtgY2m7r8ToCLkAxglmsQv/K2MG/RqRDu9PiTo4w3PhbHjvEs9AGtdVkG1Qdv70UUqmZ5lEnTcmdoHYjCjLPb8+3dlY2gAAAA==
+    Metadata:
+      aws:cdk:path: Exersice2CdkStack/CDKMetadata/Default
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+

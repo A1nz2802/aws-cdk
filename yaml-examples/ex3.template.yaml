@@ -1,0 +1,207 @@
+Description: coolest stack :)
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: MyVpc
+        - Key: project
+          Value: myapp
+    Metadata:
+      aws:cdk:path: Exersice3CdkStack/MyVPC
+  MySubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: MySubnet-1
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exersice3CdkStack/MySubnet-1
+  MySubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1b
+      CidrBlock: 10.0.2.0/24
+      Tags:
+        - Key: Name
+          Value: MySubnet-2
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exersice3CdkStack/MySubnet-2
+  MyPublicRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyPublic-RT
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exersice3CdkStack/MyPublic-RT
+  AttachRtToSubnet1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Fn::GetAtt:
+          - MyPublicRT
+          - RouteTableId
+      SubnetId:
+        Fn::GetAtt:
+          - MySubnet1
+          - SubnetId
+    Metadata:
+      aws:cdk:path: Exersice3CdkStack/AttachRtToSubnet1
+  AttachRtToSubnet2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Fn::GetAtt:
+          - MyPublicRT
+          - RouteTableId
+      SubnetId:
+        Fn::GetAtt:
+          - MySubnet2
+          - SubnetId
+    Metadata:
+      aws:cdk:path: Exersice3CdkStack/AttachRtToSubnet2
+  MyIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyIGW
+        - Key: project
+          Value: myapp
+    Metadata:
+      aws:cdk:path: Exersice3CdkStack/MyIGW
+  AttachVpcToIgw:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Fn::GetAtt:
+          - MyIGW
+          - InternetGatewayId
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exersice3CdkStack/AttachVpcToIgw
+  IgwRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Fn::GetAtt:
+          - MyIGW
+          - InternetGatewayId
+      RouteTableId:
+        Fn::GetAtt:
+          - MyPublicRT
+          - RouteTableId
+    Metadata:
+      aws:cdk:path: Exersice3CdkStack/IgwRoute
+  MyEBS18F5F8A2:
+    Type: AWS::EC2::Volume
+    Properties:
+      AvailabilityZone: us-east-1a
+      Iops: 3000
+      MultiAttachEnabled: false
+      Size: 10
+      Tags:
+        - Key: Name
+          Value: MyEBS
+      Throughput: 125
+      VolumeType: gp3
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: Exersice3CdkStack/MyEBS/Resource
+  MySG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG for my custom VPC
+      GroupName: SGWebAccess
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: anywhere rule :p
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+      Tags:
+        - Key: Name
+          Value: WebAccessMyVPC
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exersice3CdkStack/MySG
+  MyInstace1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-05b10e08d247fb927
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - Fn::GetAtt:
+            - MySG
+            - Id
+      SubnetId:
+        Fn::GetAtt:
+          - MySubnet1
+          - SubnetId
+      Tags:
+        - Key: Name
+          Value: MyInstace-1
+        - Key: project
+          Value: myapp
+      UserData:
+        Fn::Base64: |-
+          #!/bin/bash
+          sudo mkfs -t ext4 /dev/xvdy
+          sudo mkdir /data
+          sudo mount /dev/xvdy /data
+          sudo echo "UUID=$(blkid -s UUID -o value /dev/xvdy) /data ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab
+      Volumes:
+        - Device: /dev/sdy
+          VolumeId:
+            Ref: MyEBS18F5F8A2
+    Metadata:
+      aws:cdk:path: Exersice3CdkStack/MyInstace-1
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/0WPQWuDQBCFf0v2WNatsT2U3oKH0EspScihpZRxM4mT6Ky4s4oV/3uJWjzNm+8xjzeJWb/EJl5B6yN7ukUFZabfC9ibhtb/oE1Mn575+JHq9Mz7kDHKXe1cEDxAVuDCF7bx3lkCIcd3+40Fa0bZgmALnZ4C520jAjYvkZdcfXRFKPGrV80o3qFE9aoelJ7Boavu4FI9Ka08/f675Co/S8lrFy55FWQG0AAVkFFB0n06nk6G77HMGDo+gjbUJN22dqGaqnsBtjgMmt0JzdU/Nkli1s8mXl09UVQHFirR7Kb5B432dGNQAQAA
+    Metadata:
+      aws:cdk:path: Exersice3CdkStack/CDKMetadata/Default
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+

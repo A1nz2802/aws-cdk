@@ -15,13 +15,13 @@ sudo lsblk -e7
 
 ## Create a filesystem and mount the volume
 1. Create a filesystem on the EBS volume
-sudo mkfs -t ext4 /dev/xvdf
+sudo mkfs -t ext4 /dev/xvdy
 2. Create a mount point for the EBS volume
 sudo mkdir /data
 3. Mount the EBS volume to the mount point
-sudo mount /dev/xvdf /data
+sudo mount /dev/xvdy /data
 4. Make the volume mount persistent
-Run: 'sudo nano /etc/fstab' then add '/dev/xvdf /data ext4 defaults,nofail 0 2' and save the file
+Run: 'sudo nano /etc/fstab' then add '/dev/xvdy /data ext4 defaults,nofail 0 2' and save the file
 
 ## Add some data to the volume
 
@@ -36,7 +36,7 @@ Run: 'sudo nano /etc/fstab' then add '/dev/xvdf /data ext4 defaults,nofail 0 2' 
 4. Change to the /data mount point and view the data
 */
 import { Fn, Size, Stack, StackProps } from 'aws-cdk-lib';
-import { CfnInstance, CfnInternetGateway, CfnRoute, CfnRouteTable, CfnSecurityGroup, CfnSnapshotBlockPublicAccess, CfnSubnet, CfnSubnetRouteTableAssociation, CfnVolume, CfnVPC, CfnVPCGatewayAttachment, EbsDeviceVolumeType, UserData, Volume, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { CfnInstance, CfnInternetGateway, CfnRoute, CfnRouteTable, CfnSecurityGroup, CfnSubnet, CfnSubnetRouteTableAssociation, CfnVPC, CfnVPCGatewayAttachment, EbsDeviceVolumeType, UserData, Volume } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 
 export class Ex3Stack extends Stack {
@@ -135,7 +135,7 @@ export class Ex3Stack extends Stack {
       'sudo echo "UUID=$(blkid -s UUID -o value /dev/xvdy) /data ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab',
     );
     
-    //* Create 2 Ec2 Instance
+    //* Create Ec2 Instance
     new CfnInstance(this, 'MyInstace-1', {
       imageId: 'ami-05b10e08d247fb927',
       instanceType: 't2.micro',
@@ -148,12 +148,5 @@ export class Ex3Stack extends Stack {
       userData: Fn.base64(userData.render()),
       tags: [{key: 'project', value: 'myapp'}, {key: 'Name', value: 'MyInstace-1'}]
     })
-
-    /* const instance2 = new CfnInstance(this, 'MyInstance-2', {
-      imageId: 'ami-05b10e08d247fb927',
-      instanceType: 't2.micro',
-      subnetId: subnet2.attrSubnetId,
-      tags: [{key: 'project', value: 'myapp'}, {key: 'Name', value: 'MyInstance-2'}]
-    }) */
   }
 }
