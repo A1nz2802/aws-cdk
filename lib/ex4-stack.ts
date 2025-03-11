@@ -41,7 +41,7 @@ sudo mount -t efs -o tls <EFS-DNS-NAME>:/ ~/efs-mount-point
 */
 
 import { Fn, Stack, StackProps } from 'aws-cdk-lib';
-import { CfnInstance, CfnInternetGateway, CfnRoute, CfnRouteTable, CfnSecurityGroup, CfnSecurityGroupIngress, CfnSubnet, CfnSubnetRouteTableAssociation, CfnVPC, CfnVPCGatewayAttachment, EbsDeviceVolumeType, UserData, Volume } from 'aws-cdk-lib/aws-ec2';
+import { CfnInstance, CfnInternetGateway, CfnRoute, CfnRouteTable, CfnSecurityGroup, CfnSecurityGroupIngress, CfnSubnet, CfnSubnetRouteTableAssociation, CfnVPC, CfnVPCGatewayAttachment, UserData } from 'aws-cdk-lib/aws-ec2';
 import { CfnFileSystem, CfnMountTarget, LifecyclePolicy, PerformanceMode, ThroughputMode } from 'aws-cdk-lib/aws-efs';
 import { Construct } from 'constructs';
 

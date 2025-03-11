@@ -12,6 +12,7 @@ services:
       - ./lib:/app/lib
       - ./test:/app/test
       - ./cdk.out:/app/cdk.out
+      - ./scripts:/app/scripts
       # files
       - ./package.json:/app/package.json
       - ./cdk.json:/app/cdk.json
