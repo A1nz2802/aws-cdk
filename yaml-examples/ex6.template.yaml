@@ -1,0 +1,185 @@
+Description: coolest stack :)
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: MyVpc
+        - Key: project
+          Value: myapp
+    Metadata:
+      aws:cdk:path: Exercise4CdkStack/MyVPC
+  MySubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: MySubnet
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exercise4CdkStack/MySubnet
+  MyPublicRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyPublic-RT
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exercise4CdkStack/MyPublic-RT
+  AttachRtToSubnet1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Fn::GetAtt:
+          - MyPublicRT
+          - RouteTableId
+      SubnetId:
+        Fn::GetAtt:
+          - MySubnet
+          - SubnetId
+    Metadata:
+      aws:cdk:path: Exercise4CdkStack/AttachRtToSubnet1
+  MyIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyIGW
+        - Key: project
+          Value: myapp
+    Metadata:
+      aws:cdk:path: Exercise4CdkStack/MyIGW
+  AttachVpcToIgw:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Fn::GetAtt:
+          - MyIGW
+          - InternetGatewayId
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exercise4CdkStack/AttachVpcToIgw
+  IgwRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Fn::GetAtt:
+          - MyIGW
+          - InternetGatewayId
+      RouteTableId:
+        Fn::GetAtt:
+          - MyPublicRT
+          - RouteTableId
+    Metadata:
+      aws:cdk:path: Exercise4CdkStack/IgwRoute
+  MySG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Temporary SG for the Storage Service Labs
+      GroupName: StorageLabs
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: SSH Access
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0
+          Description: HTTP Access
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+      Tags:
+        - Key: Name
+          Value: StorageLabs
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exercise4CdkStack/MySG
+  MyRoleF48FFE04:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/AmazonS3ReadOnlyAccess
+      RoleName: MyRole
+    Metadata:
+      aws:cdk:path: Exercise4CdkStack/MyRole/Resource
+  MyInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: MyInstanceProfile
+      Roles:
+        - Ref: MyRoleF48FFE04
+    Metadata:
+      aws:cdk:path: Exercise4CdkStack/MyInstanceProfile
+  MyEc2:
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile:
+        Ref: MyInstanceProfile
+      ImageId: ami-05b10e08d247fb927
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - Fn::GetAtt:
+            - MySG
+            - Id
+      SubnetId:
+        Fn::GetAtt:
+          - MySubnet
+          - SubnetId
+      Tags:
+        - Key: Name
+          Value: MyEc2
+        - Key: project
+          Value: myapp
+    Metadata:
+      aws:cdk:path: Exercise4CdkStack/MyEc2
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/1WPQW/CMAyFfws5opBBtcPEreOAdplQmXZBaDKuuxnSBCXOUBX1v0+lTIiT7efnT8+FWbzMzXwClzjD+jSzfDB5K4AnDZf4lQkLk1eN+9ys9Kpx23RwJENX+ST0AQdLd/2ulTF6ZBD2bli/OaHgSNYgdIFOj8DbVIoA/rTk7twrkjAFlm4dfDqPkCjgkHrN0JpceUu7rIK39A4tqaWaKq0gxtRS/dqpZVbnwA75DLZE9MnJg2e4L3FIeJV7rVpw8E31xltGpqiWu/ygdWW4eff9fsw6fv+fbBN8w5b6XlcUfQpIOzVV+147X5M5xqffojCLZzOfHCPzLCQn3JKpxvoHWbyvJ4sBAAA=
+    Metadata:
+      aws:cdk:path: Exercise4CdkStack/CDKMetadata/Default
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+
