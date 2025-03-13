@@ -1,10 +1,12 @@
+import fs from 'node:fs';
+import { Construct } from 'constructs';
 import { Fn, Stack, StackProps } from 'aws-cdk-lib';
 import { CfnAutoScalingGroup } from 'aws-cdk-lib/aws-autoscaling';
 import { AmazonLinux2023ImageSsmParameter, CfnInternetGateway, CfnLaunchTemplate, CfnRoute, CfnRouteTable, CfnSecurityGroup, CfnSubnet, CfnSubnetRouteTableAssociation, CfnVPC, CfnVPCGatewayAttachment, InstanceClass, InstanceSize, UserData } from 'aws-cdk-lib/aws-ec2';
-import { Construct } from 'constructs';
-import fs from 'node:fs';
+import { CfnTargetGroup, TargetGroupIpAddressType, TargetType, Protocol, ApplicationProtocolVersion, CfnLoadBalancer, IpAddressType, ListenerAction, CfnListener } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { HealthCheckProtocol } from 'aws-cdk-lib/aws-globalaccelerator';
 
-export class Ex7Stack extends Stack {
+export class Ex8Stack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
@@ -97,6 +99,7 @@ export class Ex7Stack extends Stack {
     const userData = UserData.forLinux();
     userData.addCommands(scriptContent);
 
+    //* Create launch template
     const launchTemplate = new CfnLaunchTemplate(this, 'MyLaunchTemplate', {
       launchTemplateName: 'MyLaunchTemplate',
       tagSpecifications: [{
@@ -111,6 +114,21 @@ export class Ex7Stack extends Stack {
       }
     })
 
+    //* Create target group
+    const targetGroup = new CfnTargetGroup(this, 'MyTargetGroup', {
+      vpcId: vpc.attrVpcId,
+      name: 'MyTargetGroup',
+      targetType: TargetType.INSTANCE,
+      protocolVersion: ApplicationProtocolVersion.HTTP1,
+      protocol: Protocol.HTTP,
+      port: 80,
+      ipAddressType: TargetGroupIpAddressType.IPV4,
+      healthCheckProtocol: HealthCheckProtocol.HTTP,
+      healthCheckPath: '/',
+      tags: [{key: 'project', value: 'myapp'}],
+    })
+
+    //* Create AutoScalingGroup
     new CfnAutoScalingGroup(this, 'MySCG', {
       maxSize: '2',
       minSize: '2',
@@ -122,6 +140,33 @@ export class Ex7Stack extends Stack {
       vpcZoneIdentifier: [subnet1.attrSubnetId, subnet2.attrSubnetId],
       healthCheckGracePeriod: 300,
       desiredCapacity: '2',
-    })   
+      targetGroupArns: [targetGroup.attrTargetGroupArn], 
+    })
+
+    //* Create Load Balancer
+    const myElb = new CfnLoadBalancer(this, 'MyELB', {
+      name: 'MyELB',
+      type: 'application',
+      ipAddressType: IpAddressType.IPV4,
+      subnetMappings: [{
+        subnetId: subnet1.attrSubnetId,
+      }, {
+        subnetId: subnet2.attrSubnetId
+      }],
+      securityGroups: [securityGroup.attrId],
+      tags: [{key: 'project', value: 'myapp'}],
+    })
+
+    //* Create Listener
+    new CfnListener(this, 'MyListener', {
+      loadBalancerArn: myElb.attrLoadBalancerArn,
+      port: 80,
+      protocol: Protocol.HTTP,
+      defaultActions: [{
+        type: 'forward',
+        targetGroupArn: targetGroup.attrTargetGroupArn,
+      }],
+    })
+
   }
 }

@@ -1,0 +1,314 @@
+Description: coolest stack :)
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: MyVpc
+        - Key: project
+          Value: myapp
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/MyVPC
+  MySubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: MySubnet1
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/MySubnet1
+  MySubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1b
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: MySubnet2
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/MySubnet2
+  MyPublicRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyPublic-RT
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/MyPublic-RT
+  AttachRtToSubnet1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Fn::GetAtt:
+          - MyPublicRT
+          - RouteTableId
+      SubnetId:
+        Fn::GetAtt:
+          - MySubnet1
+          - SubnetId
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/AttachRtToSubnet1
+  AttachRtToSubnet2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Fn::GetAtt:
+          - MyPublicRT
+          - RouteTableId
+      SubnetId:
+        Fn::GetAtt:
+          - MySubnet2
+          - SubnetId
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/AttachRtToSubnet2
+  MyIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyIGW
+        - Key: project
+          Value: myapp
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/MyIGW
+  AttachVpcToIgw:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Fn::GetAtt:
+          - MyIGW
+          - InternetGatewayId
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/AttachVpcToIgw
+  IgwRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Fn::GetAtt:
+          - MyIGW
+          - InternetGatewayId
+      RouteTableId:
+        Fn::GetAtt:
+          - MyPublicRT
+          - RouteTableId
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/IgwRoute
+  MySG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Temporary SG for the Storage Service Labs
+      GroupName: StorageLabs
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: SSH Access
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0
+          Description: HTTP Access
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+      Tags:
+        - Key: Name
+          Value: StorageLabs
+        - Key: project
+          Value: myapp
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/MySG
+  MyLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: ami-08b5b3a93ed654d19
+        InstanceType: t2.micro
+        SecurityGroupIds:
+          - Fn::GetAtt:
+              - MySG
+              - Id
+        UserData:
+          Fn::Base64: |-
+            #!/bin/bash
+            # Update the system and install necessary packages
+            yum update -y
+            yum install -y httpd
+
+            # Start the Apache server
+            systemctl start httpd
+            systemctl enable httpd
+
+            # Fetch the Availability Zone information using IMDSv2
+            TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
+            AZ=`curl http://169.254.169.254/latest/meta-data/placement/availability-zone -H "X-aws-ec2-metadata-token: $TOKEN"`
+
+            # Create the index.html file
+            cat > /var/www/html/index.html <<EOF
+            <html>
+            <head>
+                <title>Instance Availability Zone</title>
+                <style>
+                    body {
+                        background-color: #6495ED; /* Cornflower Blue - a darker shade */
+                        color: white;
+                        font-size: 36px; /* Significantly larger text */
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                        margin: 0;
+                        font-family: Arial, sans-serif;
+                    }
+                </style>
+            </head>
+            <body>
+                <div>This instance is located in Availability Zone: $AZ</div>
+            </body>
+            </html>
+            EOF
+
+            # Ensure the httpd service is correctly set up to start on boot
+            chkconfig httpd on
+      LaunchTemplateName: MyLaunchTemplate
+      TagSpecifications:
+        - ResourceType: launch-template
+          Tags:
+            - Key: project
+              Value: myapp
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/MyLaunchTemplate
+  MyTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      IpAddressType: ipv4
+      Name: MyTargetGroup
+      Port: 80
+      Protocol: HTTP
+      ProtocolVersion: HTTP1
+      Tags:
+        - Key: project
+          Value: myapp
+      TargetType: instance
+      VpcId:
+        Fn::GetAtt:
+          - MyVPC
+          - VpcId
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/MyTargetGroup
+  MySCG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: MySCG
+      DesiredCapacity: "2"
+      HealthCheckGracePeriod: 300
+      LaunchTemplate:
+        LaunchTemplateId:
+          Fn::GetAtt:
+            - MyLaunchTemplate
+            - LaunchTemplateId
+        Version: "1"
+      MaxSize: "2"
+      MinSize: "2"
+      TargetGroupARNs:
+        - Fn::GetAtt:
+            - MyTargetGroup
+            - TargetGroupArn
+      VPCZoneIdentifier:
+        - Fn::GetAtt:
+            - MySubnet1
+            - SubnetId
+        - Fn::GetAtt:
+            - MySubnet2
+            - SubnetId
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/MySCG
+  MyELB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      IpAddressType: ipv4
+      Name: MyELB
+      SecurityGroups:
+        - Fn::GetAtt:
+            - MySG
+            - Id
+      SubnetMappings:
+        - SubnetId:
+            Fn::GetAtt:
+              - MySubnet1
+              - SubnetId
+        - SubnetId:
+            Fn::GetAtt:
+              - MySubnet2
+              - SubnetId
+      Tags:
+        - Key: project
+          Value: myapp
+      Type: application
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/MyELB
+  MyListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn:
+            Fn::GetAtt:
+              - MyTargetGroup
+              - TargetGroupArn
+          Type: forward
+      LoadBalancerArn:
+        Fn::GetAtt:
+          - MyELB
+          - LoadBalancerArn
+      Port: 80
+      Protocol: HTTP
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/MyListener
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/0WOwY6DMAxEv6X3kFLUw15ZDtVKPVQF7bUywVC3wakSp6hC/PsKWImTPWPP02T68JXqdAdDSEzzTCzVeiwFzFPBEG4jmkyPRcu/l0IVLZexZpR5u7ooWEFtcfM3Lw/BGQIhx/P5hwU9o5xAcICPWoH/KhcBc++RN+6CRBM9yefkXXzNxhkim3uF/cuC4KTQQhAy1kFTgwU2xN17bVuB71C2pIPme3lBv2gKgox+UhDFBQOWuNNFy3kUV65yCU+TYtegfoT9O8v04ajT3SMQJT6yUI/6us4/L1Qr/EYBAAA=
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/CDKMetadata/Default
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+
