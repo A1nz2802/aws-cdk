@@ -1,0 +1,34 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListAllMyBuckets",
+                "s3:GetBucketLocation",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject"
+            ],
+            "Resource": [
+                "<my-bucket-arn>/*"
+            ]
+        },
+        {
+            "Sid": "DenyDeleteObject",
+            "Effect": "Deny",
+            "Action": "s3:DeleteObject",
+            "Resource": [
+                "<my-bucket-arn>/*"
+            ]
+        }
+    ]
+}
