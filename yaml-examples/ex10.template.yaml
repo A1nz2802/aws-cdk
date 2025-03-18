@@ -1,0 +1,97 @@
+Description: coolest stack :)
+Resources:
+  MyUserDC45028B:
+    Type: AWS::IAM::User
+    Properties:
+      LoginProfile:
+        Password: TempPassword123!
+        PasswordResetRequired: false
+      UserName: Erik
+    Metadata:
+      aws:cdk:path: Exercise10CdkStack/MyUser/Resource
+  MyUserDefaultPolicy7B897426:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - s3:GetBucketLocation
+              - s3:ListAllMyBuckets
+              - s3:ListBucket
+            Effect: Allow
+            Resource: "*"
+          - Action:
+              - s3:GetObject
+              - s3:PutObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - MyBucketF68F3FF0
+                      - Arn
+                  - /*
+        Version: "2012-10-17"
+      PolicyName: MyUserDefaultPolicy7B897426
+      Users:
+        - Ref: MyUserDC45028B
+    Metadata:
+      aws:cdk:path: Exercise10CdkStack/MyUser/DefaultPolicy/Resource
+  MyBucketF68F3FF0:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      BucketName: my-bucket-5wyayv98o5nt70e
+      ObjectLockEnabled: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: Exercise10CdkStack/MyBucket/Resource
+  MyBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: MyBucketF68F3FF0
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowDeleteObject
+            Effect: Allow
+            Principal:
+              AWS:
+                Fn::GetAtt:
+                  - MyUserDC45028B
+                  - Arn
+            Action: s3:DeleteObject
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - MyBucketF68F3FF0
+                      - Arn
+                  - /*
+    Metadata:
+      aws:cdk:path: Exercise10CdkStack/MyBucketPolicy
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/52RT08CMRDFPwtzNKXyx4PZGyoxJooE8EQI6bZDKNtt104XQpr97oZdBJR48dTpe+37Tac93r3v8E5L7KgtVdY2OuVxGoTMmNjRMmqR8/hB6OcRSkI/EjlCAjfAoBBEO+fVr+0ECcMEP0vtUUGyEoawYhGEUjM3dkbLPSTzWC3OotdW6kKYKzcEIdcv1miLJw9uYPGfvAV7XNnDS1gjH4JOjJk7OJfpf8hKTYMImKMN9AN7Jde8BlUx6vP4UMoMwzxCWhcXk0Qr/b4I2llIYNpfvg1Gg+fhEzBIjZPZuEyNlgMpkeh4w6UblOHVyWxoRWpOg/523ncWPa11AQk03FoZ2pXzEhUw2KIn7ez5i+p+m7Pn6th/VTHrFPIN3W57Pd69453WhrRu+9IGnSOfNOsXXMao4k4CAAA=
+    Metadata:
+      aws:cdk:path: Exercise10CdkStack/CDKMetadata/Default
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+
