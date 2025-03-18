@@ -1,0 +1,39 @@
+Description: coolest stack :)
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      BucketName: my-bucket-5wyayv98o5nt70e
+      ObjectLockEnabled: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: project
+          Value: myapp
+      VersioningConfiguration:
+        Status: Suspended
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/MyBucket
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/zPSM7Qw0DNQTCwv1k1OydbNyUzSqw4uSUzO1kksL44vNtZzTstzKk3OTi2p1cnLT0nVyyrWLzMy0jM00TNQzCrOzNQtKs0rycxN1QuC0AB02hD5UgAAAA==
+    Metadata:
+      aws:cdk:path: Exercise7CdkStack/CDKMetadata/Default
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+
