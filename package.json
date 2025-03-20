@@ -9,7 +9,7 @@
     "test": "",
     "cdk": "cdk",
     "synth": "cdk synth",
-    "synthy": "cdk synth > cdk.out/some.template.yaml && chmod 644 cdk.out/some.template.yaml",
+    "synthy": "cdk synth > cdk.out/lab.yaml && chmod 644 cdk.out/lab.yaml",
     "bootstrap": "cdk bootstrap",
     "deploy": "cdk deploy",
     "destroy": "cdk destroy"
