@@ -73,14 +73,16 @@ EOF
 
 */
 
-import { Fn, Stack, StackProps } from 'aws-cdk-lib';
-import { CfnInstance, CfnInternetGateway, CfnLaunchTemplate, CfnRoute, CfnRouteTable, CfnSecurityGroup, CfnSubnet, CfnSubnetRouteTableAssociation, CfnVPC, CfnVPCGatewayAttachment, LaunchTemplateHttpTokens, UserData } from 'aws-cdk-lib/aws-ec2';
-import { Construct } from 'constructs';
 import fs from 'node:fs';
+import { Fn, Stack, StackProps } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import { CfnInstance, CfnInternetGateway, CfnLaunchTemplate, CfnRoute, CfnRouteTable, CfnSecurityGroup, CfnSubnet, CfnSubnetRouteTableAssociation, CfnVPC, CfnVPCGatewayAttachment, LaunchTemplateHttpTokens, UserData } from 'aws-cdk-lib/aws-ec2';
 
-export class Ex5Stack extends Stack {
+export class Lab5 extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    this.templateOptions.description = 'Retrieve instance metadata using IMDS v1 and v2, and display it on a web page via a user-data script.'
 
     //* Create VPC
     const vpc = new CfnVPC(this, 'MyVPC', {

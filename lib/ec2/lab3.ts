@@ -36,12 +36,27 @@ Run: 'sudo nano /etc/fstab' then add '/dev/xvdy /data ext4 defaults,nofail 0 2' 
 4. Change to the /data mount point and view the data
 */
 import { Fn, Size, Stack, StackProps } from 'aws-cdk-lib';
-import { CfnInstance, CfnInternetGateway, CfnRoute, CfnRouteTable, CfnSecurityGroup, CfnSubnet, CfnSubnetRouteTableAssociation, CfnVPC, CfnVPCGatewayAttachment, EbsDeviceVolumeType, UserData, Volume } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
+import { 
+  CfnInstance, 
+  CfnInternetGateway, 
+  CfnRoute, 
+  CfnRouteTable, 
+  CfnSecurityGroup, 
+  CfnSubnet, 
+  CfnSubnetRouteTableAssociation, 
+  CfnVPC, 
+  CfnVPCGatewayAttachment, 
+  EbsDeviceVolumeType, 
+  UserData, 
+  Volume 
+} from 'aws-cdk-lib/aws-ec2';
 
-export class Ex3Stack extends Stack {
+export class Lab3 extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    this.templateOptions.description = 'Launch two instances in separate AZs, attach a 10GB EBS volume, and migrate it via snapshot.';
 
     //* Create VPC
     const vpc = new CfnVPC(this, 'MyVPC', {

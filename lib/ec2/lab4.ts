@@ -41,13 +41,33 @@ sudo mount -t efs -o tls <EFS-DNS-NAME>:/ ~/efs-mount-point
 */
 
 import { Fn, Stack, StackProps } from 'aws-cdk-lib';
-import { CfnInstance, CfnInternetGateway, CfnRoute, CfnRouteTable, CfnSecurityGroup, CfnSecurityGroupIngress, CfnSubnet, CfnSubnetRouteTableAssociation, CfnVPC, CfnVPCGatewayAttachment, UserData } from 'aws-cdk-lib/aws-ec2';
-import { CfnFileSystem, CfnMountTarget, LifecyclePolicy, PerformanceMode, ThroughputMode } from 'aws-cdk-lib/aws-efs';
 import { Construct } from 'constructs';
+import { 
+  CfnInstance, 
+  CfnInternetGateway, 
+  CfnRoute, 
+  CfnRouteTable, 
+  CfnSecurityGroup, 
+  CfnSecurityGroupIngress, 
+  CfnSubnet, 
+  CfnSubnetRouteTableAssociation, 
+  CfnVPC, 
+  CfnVPCGatewayAttachment, 
+  UserData 
+} from 'aws-cdk-lib/aws-ec2';
+import { 
+  CfnFileSystem, 
+  CfnMountTarget, 
+  LifecyclePolicy, 
+  PerformanceMode, 
+  ThroughputMode 
+} from 'aws-cdk-lib/aws-efs';
 
-export class Ex4Stack extends Stack {
+export class Lab4 extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    this.templateOptions.description = 'Launch multi-AZ instances, configure security, and mount an EFS file system using both NFS and EFS utils.'
 
     //* Create VPC
     const vpc = new CfnVPC(this, 'MyVPC', {

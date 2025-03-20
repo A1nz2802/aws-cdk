@@ -4,9 +4,11 @@ import { CfnInstanceProfile, ManagedPolicy, Role, ServicePrincipal } from 'aws-c
 import { Construct } from 'constructs';
 
 
-export class Ex6Stack extends Stack {
+export class Lab6 extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    this.templateOptions.description = 'Launch an EC2 instance with a security group for SSH/HTTP and attach an IAM role for S3 read-only access.'
 
     /* new CfnRole(this, '', {
       roleName: '',

@@ -1,14 +1,22 @@
 import { App, Stack, StackProps } from 'aws-cdk-lib';
-import { Lab1 } from './vpc/lab1-stack';
-import { Lab2 } from './vpc/lab2-stack';
+import { Lab1, Lab2 } from './vpc';
+import {
+  Lab3,
+  Lab4,
+  Lab5,
+  Lab6,
+  Lab7,
+  Lab8,
+} from './ec2';
+import { Lab9, Lab10, Lab11 } from './s3';
 
 type LabStackConstructor = new (app: App, id: string, props?: StackProps) => Stack;
 
 const labStackConstructors: LabStackConstructor[] = [
-  Lab1, Lab2
+  Lab1, Lab2, Lab3, Lab4, Lab5, Lab6, Lab7, Lab8, Lab9, Lab10, Lab11
 ]
 
-const LAB_NUMBER = 2;
+const LAB_NUMBER = 11;
 
 export function createStack(app: App) {
   const LabConstructor = labStackConstructors[LAB_NUMBER - 1];

@@ -3,9 +3,11 @@ import { Effect, PolicyStatement, User } from 'aws-cdk-lib/aws-iam';
 import { BlockPublicAccess, Bucket, BucketEncryption, CfnBucketPolicy, ObjectOwnership } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 
-export class Ex11Stack extends Stack {
+export class Lab10 extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    this.templateOptions.description = 'Create an IAM user and an encrypted S3 bucket with tailored policies that demonstrate controlled object deletion.';
 
     //* Create an IAM User with a temporary password
     const user = new User(this, 'MyUser', {

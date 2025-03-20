@@ -1,14 +1,14 @@
 import fs from 'node:fs';
 import { Construct } from 'constructs';
-import { Fn, Stack, StackProps } from 'aws-cdk-lib';
-import { CfnAutoScalingGroup, CfnScalingPolicy } from 'aws-cdk-lib/aws-autoscaling';
 import { AmazonLinux2023ImageSsmParameter, CfnInternetGateway, CfnLaunchTemplate, CfnRoute, CfnRouteTable, CfnSecurityGroup, CfnSubnet, CfnSubnetRouteTableAssociation, CfnVPC, CfnVPCGatewayAttachment, InstanceClass, InstanceSize, UserData } from 'aws-cdk-lib/aws-ec2';
-import { CfnTargetGroup, TargetGroupIpAddressType, TargetType, Protocol, ApplicationProtocolVersion, CfnLoadBalancer, IpAddressType, CfnListener } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { HealthCheckProtocol } from 'aws-cdk-lib/aws-globalaccelerator';
+import { Fn, Stack, StackProps } from 'aws-cdk-lib';
+import { CfnAutoScalingGroup } from 'aws-cdk-lib/aws-autoscaling';
 
-export class Ex8Stack extends Stack {
+export class Lab7 extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    this.templateOptions.description = 'Provision an Auto Scaling Group with a Launch Template deploying T2.micro instances using a custom user-data script on Amazon Linux 2023.'
 
     //* Create VPC
     const vpc = new CfnVPC(this, 'MyVPC', {
@@ -36,22 +36,6 @@ export class Ex8Stack extends Stack {
       tags: [{key: 'project', value: 'myapp'}, {key: 'Name', value: 'MySubnet2'}]
     })
 
-    const subnet3 = new CfnSubnet(this, 'MySubnet3', {
-      vpcId: vpc.attrVpcId,
-      cidrBlock: '10.0.3.0/24',
-      availabilityZone: 'us-east-1c',
-      mapPublicIpOnLaunch: true,
-      tags: [{key: 'project', value: 'myapp'}, {key: 'Name', value: 'MySubnet3'}]
-    })
-
-    const subnet4 = new CfnSubnet(this, 'MySubnet4', {
-      vpcId: vpc.attrVpcId,
-      cidrBlock: '10.0.4.0/24',
-      availabilityZone: 'us-east-1d',
-      mapPublicIpOnLaunch: true,
-      tags: [{key: 'project', value: 'myapp'}, {key: 'Name', value: 'MySubnet4'}]
-    })
-
     //* Create Public Route Table
     const route = new CfnRouteTable(this, 'MyPublic-RT', {
       vpcId: vpc.attrVpcId,
@@ -66,16 +50,6 @@ export class Ex8Stack extends Stack {
 
     new CfnSubnetRouteTableAssociation(this, 'AttachRtToSubnet2', {
       subnetId: subnet2.attrSubnetId,
-      routeTableId: route.attrRouteTableId,
-    })
-
-    new CfnSubnetRouteTableAssociation(this, 'AttachRtToSubnet3', {
-      subnetId: subnet3.attrSubnetId,
-      routeTableId: route.attrRouteTableId,
-    })
-
-    new CfnSubnetRouteTableAssociation(this, 'AttachRtToSubnet4', {
-      subnetId: subnet4.attrSubnetId,
       routeTableId: route.attrRouteTableId,
     })
 
@@ -125,7 +99,6 @@ export class Ex8Stack extends Stack {
     const userData = UserData.forLinux();
     userData.addCommands(scriptContent);
 
-    //* Create launch template
     const launchTemplate = new CfnLaunchTemplate(this, 'MyLaunchTemplate', {
       launchTemplateName: 'MyLaunchTemplate',
       tagSpecifications: [{
@@ -140,89 +113,17 @@ export class Ex8Stack extends Stack {
       }
     })
 
-    //* Create ELB
-    const myElb = new CfnLoadBalancer(this, 'MyELB', {
-      name: 'MyELB',
-      type: 'application',
-      ipAddressType: IpAddressType.IPV4,
-      subnetMappings: [{
-        subnetId: subnet1.attrSubnetId,
-      }, {
-        subnetId: subnet2.attrSubnetId
-      }, {
-        subnetId: subnet3.attrSubnetId,
-      }, {
-        subnetId: subnet4.attrSubnetId,
-      }],
-      securityGroups: [securityGroup.attrId],
-      tags: [{key: 'project', value: 'myapp'}],
-    })
-
-    //* Create target group
-    const targetGroup = new CfnTargetGroup(this, 'MyTargetGroup', {
-      vpcId: vpc.attrVpcId,
-      name: 'MyTargetGroup',
-      targetType: TargetType.INSTANCE,
-      protocolVersion: ApplicationProtocolVersion.HTTP1,
-      protocol: Protocol.HTTP,
-      port: 80,
-      ipAddressType: TargetGroupIpAddressType.IPV4,
-      healthCheckProtocol: HealthCheckProtocol.HTTP,
-      healthCheckPath: '/',
-      tags: [{key: 'project', value: 'myapp'}],
-    })
-
-    //* Create Listener
-    const listener = new CfnListener(this, 'MyListener', {
-      loadBalancerArn: myElb.attrLoadBalancerArn,
-      port: 80,
-      protocol: Protocol.HTTP,
-      defaultActions: [{
-        type: 'forward',
-        targetGroupArn: targetGroup.attrTargetGroupArn,
-      }],
-    })
-    
-    //* Create AutoScalingGroup
-    const myAutoScalingGroup = new CfnAutoScalingGroup(this, 'MySCG', {
-      maxSize: '4',
-      minSize: '1',
+    new CfnAutoScalingGroup(this, 'MySCG', {
+      maxSize: '2',
+      minSize: '2',
       autoScalingGroupName: 'MySCG',
       launchTemplate: {
         version: '1',
         launchTemplateId: launchTemplate.attrLaunchTemplateId,
       },
-      vpcZoneIdentifier: [subnet1.attrSubnetId, subnet2.attrSubnetId, subnet3.attrSubnetId, subnet4.attrSubnetId],
+      vpcZoneIdentifier: [subnet1.attrSubnetId, subnet2.attrSubnetId],
       healthCheckGracePeriod: 300,
       desiredCapacity: '2',
-      targetGroupArns: [targetGroup.attrTargetGroupArn],
-    })
-
-    myAutoScalingGroup.node.addDependency(listener);
-    myAutoScalingGroup.node.addDependency(targetGroup);
-    
-    const scalingPolicy = new CfnScalingPolicy(this, 'MyScalingPolicy', {
-      autoScalingGroupName: myAutoScalingGroup.autoScalingGroupName!,
-      policyType: 'TargetTrackingScaling',
-      targetTrackingConfiguration: {
-        targetValue: 50,
-        predefinedMetricSpecification: {
-          predefinedMetricType: 'ALBRequestCountPerTarget',
-          resourceLabel: Fn.join('/', [
-            Fn.select(1, Fn.split('loadbalancer/', myElb.attrLoadBalancerArn)),
-            'targetgroup',
-            Fn.select(1, Fn.split('targetgroup/', targetGroup.attrTargetGroupArn))
-          ]),
-        },
-      },
-      estimatedInstanceWarmup: 300,
-    });
-
-    scalingPolicy.node.addDependency(listener);
-    scalingPolicy.node.addDependency(myAutoScalingGroup);
+    })   
   }
 }
-
-// for i in {1..200}; do curl MyELB-540885165.us-east-1.elb.amazonaws.com & done; wait    bash
-
-// for i in (seq 1 200); curl MyELB-540885165.us-east-1.elb.amazonaws.com &; end; wait    fish
