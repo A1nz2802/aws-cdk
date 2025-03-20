@@ -1,6 +1,16 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
-import { CfnInstance, CfnInternetGateway, CfnRoute, CfnRouteTable, CfnSecurityGroup, CfnSubnet, CfnSubnetRouteTableAssociation, CfnVPC, CfnVPCGatewayAttachment, DefaultInstanceTenancy, IpAddresses, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
+import { 
+  CfnInstance, 
+  CfnInternetGateway, 
+  CfnRoute, 
+  CfnRouteTable, 
+  CfnSecurityGroup, 
+  CfnSubnet, 
+  CfnSubnetRouteTableAssociation, 
+  CfnVPC, 
+  CfnVPCGatewayAttachment
+ } from 'aws-cdk-lib/aws-ec2';
 
 /*
 Create VPC
@@ -22,9 +32,11 @@ Create Internet Gateway
 Name: MyIGW VPC: MyVPC
 */
 
-export class Ex2Stack extends Stack {
+export class Lab2 extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    this.templateOptions.description = 'Custom VPC, subnets and IGW';
 
     //* Create VPC
     const vpc = new CfnVPC(this, 'MyVPC', {
@@ -142,3 +154,12 @@ export class Ex2Stack extends Stack {
     })
   }
 }
+
+/* new Ex2Stack(app, 'Exercise2CdkStack', {
+  stackName: 'ex-2',
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION || 'us-east-1',
+  },
+  description: 'coolest stack :)'
+}); */

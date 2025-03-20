@@ -1,10 +1,12 @@
 import { Stack, StackProps, Tags } from 'aws-cdk-lib';
-import { CfnVPC, DefaultInstanceTenancy, IpAddresses, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { DefaultInstanceTenancy, IpAddresses, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 
-export class FirstStack extends Stack {
+export class Lab1 extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    this.templateOptions.description = 'Simple VPC';
 
     const vpc = new Vpc(this, 'MyVPC', {
       ipAddresses: IpAddresses.cidr('10.1.0.0/16'),
