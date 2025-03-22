@@ -1,7 +1,7 @@
 import { App, Stack, StackProps } from 'aws-cdk-lib';
 
 import { Lab3, Lab4, Lab5, Lab6, Lab7, Lab8 } from './ec2';
-import { Lab9, Lab10, Lab11, Lab12 } from './s3';
+import { Lab9, Lab10, Lab11, Lab12, Lab13, Lab14 } from './s3';
 import { Lab1, Lab2 } from './vpc';
 
 type LabStackConstructor = new (
@@ -26,9 +26,11 @@ const labStackConstructors: LabStackConstructor[] = [
   Lab10,
   Lab11,
   Lab12,
+  Lab13,
+  Lab14,
 ];
 
-const LAB_NUMBER = 12;
+const LAB_NUMBER = 14;
 
 export function createStack(app: App) {
   const LabConstructor = labStackConstructors[LAB_NUMBER - 1];
