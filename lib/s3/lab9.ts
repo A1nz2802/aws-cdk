@@ -6,12 +6,13 @@ export class Lab9 extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    this.templateOptions.description = 'Deploy an S3 bucket with enforced ownership, AES256 encryption, and strict public access controls';
+    this.templateOptions.description =
+      'Deploy an S3 bucket with enforced ownership, AES256 encryption, and strict public access controls';
 
     new CfnBucket(this, 'MyBucket', {
       bucketName: 'my-bucket-5wyayv98o5nt70e',
       ownershipControls: {
-        rules: [{ objectOwnership: ObjectOwnership.BUCKET_OWNER_ENFORCED }]
+        rules: [{ objectOwnership: ObjectOwnership.BUCKET_OWNER_ENFORCED }],
       },
       publicAccessBlockConfiguration: {
         blockPublicAcls: true,
@@ -23,15 +24,17 @@ export class Lab9 extends Stack {
         status: 'Suspended',
       },
       bucketEncryption: {
-        serverSideEncryptionConfiguration: [{
-          bucketKeyEnabled: true,
-          serverSideEncryptionByDefault: {
-            sseAlgorithm: 'AES256',
-          }
-        }]
+        serverSideEncryptionConfiguration: [
+          {
+            bucketKeyEnabled: true,
+            serverSideEncryptionByDefault: {
+              sseAlgorithm: 'AES256',
+            },
+          },
+        ],
       },
       objectLockEnabled: false,
-      tags: [{ key: 'project', value: 'myapp' }]
-    })    
+      tags: [{ key: 'project', value: 'myapp' }],
+    });
   }
 }

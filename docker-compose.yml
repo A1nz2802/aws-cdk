@@ -16,3 +16,4 @@ services:
       # files
       - ./package.json:/app/package.json
       - ./cdk.json:/app/cdk.json
+      - ./eslint.config.mjs:/app/eslint.config.mjs

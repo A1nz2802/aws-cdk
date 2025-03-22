@@ -1,5 +1,10 @@
 import { Stack, StackProps, Tags } from 'aws-cdk-lib';
-import { DefaultInstanceTenancy, IpAddresses, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
+import {
+  DefaultInstanceTenancy,
+  IpAddresses,
+  SubnetType,
+  Vpc,
+} from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 
 export class Lab1 extends Stack {
@@ -15,20 +20,23 @@ export class Lab1 extends Stack {
       enableDnsHostnames: true,
       enableDnsSupport: true,
       defaultInstanceTenancy: DefaultInstanceTenancy.DEFAULT,
-      subnetConfiguration: [{
-        name: 'public-sub',
-        subnetType: SubnetType.PUBLIC,
-        cidrMask: 24,
-      }, {
-        name: 'private-sub',
-        subnetType: SubnetType.PRIVATE_ISOLATED,
-        cidrMask: 24,
-      }],
+      subnetConfiguration: [
+        {
+          name: 'public-sub',
+          subnetType: SubnetType.PUBLIC,
+          cidrMask: 24,
+        },
+        {
+          name: 'private-sub',
+          subnetType: SubnetType.PRIVATE_ISOLATED,
+          cidrMask: 24,
+        },
+      ],
       natGateways: 0,
       //maxAzs: 3,
       restrictDefaultSecurityGroup: false,
-    })
+    });
 
-    Tags.of(vpc).add('project', 'myapp')
+    Tags.of(vpc).add('project', 'myapp');
   }
 }
