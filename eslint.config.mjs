@@ -42,6 +42,8 @@ export default tseslint.config(
       "simple-import-sort/exports": "error",
       "n/no-missing-import": "off",
       "unicorn/prevent-abbreviations": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "no-unused-vars": "warn",
     }, 
   },
   // from .prettierrc
