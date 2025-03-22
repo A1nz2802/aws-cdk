@@ -1,0 +1,60 @@
+Description: S3 Enforce Encryption with AWS KMS
+Resources:
+  encryptedbucketC3794EF1:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      BucketName: encrypted-bucket-5wyasda9
+      ObjectLockEnabled: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: lab-12-stack/encrypted-bucket/Resource
+  encryptedbucketPolicy858B87B8:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: encryptedbucketC3794EF1
+      PolicyDocument:
+        Statement:
+          - Action: s3:PutObject
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption: aws:kms
+            Effect: Deny
+            Principal:
+              AWS: "*"
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - encryptedbucketC3794EF1
+                      - Arn
+                  - /*
+            Sid: DenyUnEncryptedObjectUploads
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: lab-12-stack/encrypted-bucket/Policy/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/01Oy07DMBD8lu4ROSZNOSDfAkS9lFLRI0KVvdkIJ45d2U6jKMq/I8WAOM1oHpop+PYx5/lGjiHDusuMVnw+R4kdk2O4hB2fnwbsKH7MoFZylD2BgDtgQBb9dI3aWRBw3l1ey2O5r16AgTIOu9OgjMYSkUL4aTjVEsaDw66yUhmqQTTSBPp13kZLPnzpKwhIu6tS2cZ5pBoYeOrdTZqTMxonEFBTiN5NsHyy58amDkuQMn/H1wv/Y8lfFmZdTbwN97ei4NsHnm/aoHXmBxt1T/w94TfPM47JKgEAAA==
+    Metadata:
+      aws:cdk:path: lab-12-stack/CDKMetadata/Default
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+

@@ -75,7 +75,7 @@ export class Lab10 extends Stack {
       Statement: [
         {
           Sid: 'AllowDeleteObject',
-          Effect: 'Allow',
+          Effect: Effect.ALLOW,
           Principal: {
             AWS: user.userArn,
           },

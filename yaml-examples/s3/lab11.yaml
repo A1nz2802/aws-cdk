@@ -1,0 +1,207 @@
+Description: S3 Replication and Lifecycle
+Resources:
+  DestinationBucket4BECDB47:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      BucketName: destination-bucket-5wyasda10
+      ObjectLockEnabled: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: lab-11-stack/DestinationBucket/Resource
+  SRRS31EAFB557:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+        Version: "2012-10-17"
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - s3:GetObjectVersionAcl
+                  - s3:GetObjectVersionForReplication
+                  - s3:GetObjectVersionTagging
+                  - s3:GetReplicationConfiguration
+                  - s3:ListBucket
+                Effect: Allow
+                Resource:
+                  - arn:aws:s3:::source-bucket-5wyasda9
+                  - arn:aws:s3:::source-bucket-5wyasda9/*
+              - Action:
+                  - s3:ReplicateDelete
+                  - s3:ReplicateObject
+                  - s3:ReplicateTags
+                Effect: Allow
+                Resource:
+                  Fn::Join:
+                    - ""
+                    - - Fn::GetAtt:
+                          - DestinationBucket4BECDB47
+                          - Arn
+                      - /*
+            Version: "2012-10-17"
+          PolicyName: S3ReplicationPolicy
+      RoleName: SRR-S3
+    Metadata:
+      aws:cdk:path: lab-11-stack/SRR-S3/Resource
+  SRRS3DefaultPolicyA5F3AAB7:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - s3:Abort*
+              - s3:DeleteObject*
+              - s3:GetBucket*
+              - s3:GetObject*
+              - s3:List*
+              - s3:PutObject
+              - s3:PutObjectLegalHold
+              - s3:PutObjectRetention
+              - s3:PutObjectTagging
+              - s3:PutObjectVersionTagging
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - sourcebucketE323AAE3
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - sourcebucketE323AAE3
+                        - Arn
+                    - /*
+        Version: "2012-10-17"
+      PolicyName: SRRS3DefaultPolicyA5F3AAB7
+      Roles:
+        - Ref: SRRS31EAFB557
+    Metadata:
+      aws:cdk:path: lab-11-stack/SRR-S3/DefaultPolicy/Resource
+  sourcebucketReplicationRoleCE04175B:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+        Version: "2012-10-17"
+      RoleName: CDKReplicationRole
+    Metadata:
+      aws:cdk:path: lab-11-stack/source-bucket/ReplicationRole/Resource
+  sourcebucketReplicationRoleDefaultPolicy91134C06:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - s3:GetReplicationConfiguration
+              - s3:ListBucket
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - sourcebucketE323AAE3
+                - Arn
+          - Action:
+              - s3:GetObjectVersionAcl
+              - s3:GetObjectVersionForReplication
+              - s3:GetObjectVersionTagging
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - sourcebucketE323AAE3
+                      - Arn
+                  - /*
+          - Action:
+              - s3:ObjectOwnerOverrideToBucketOwner
+              - s3:ReplicateDelete
+              - s3:ReplicateObject
+              - s3:ReplicateTags
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - DestinationBucket4BECDB47
+                      - Arn
+                  - /*
+        Version: "2012-10-17"
+      PolicyName: sourcebucketReplicationRoleDefaultPolicy91134C06
+      Roles:
+        - Ref: sourcebucketReplicationRoleCE04175B
+    Metadata:
+      aws:cdk:path: lab-11-stack/source-bucket/ReplicationRole/DefaultPolicy/Resource
+  sourcebucketE323AAE3:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      BucketName: source-bucket-5wyasda9
+      ObjectLockEnabled: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      ReplicationConfiguration:
+        Role:
+          Fn::GetAtt:
+            - sourcebucketReplicationRoleCE04175B
+            - Arn
+        Rules:
+          - DeleteMarkerReplication:
+              Status: Enabled
+            Destination:
+              Bucket:
+                Fn::GetAtt:
+                  - DestinationBucket4BECDB47
+                  - Arn
+            Filter:
+              Prefix: ""
+            Priority: 1
+            Status: Enabled
+      VersioningConfiguration:
+        Status: Enabled
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: lab-11-stack/source-bucket/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/81RXWvbMBT9Lb2PRfHSdA/Db+4WxmDtgtO3EIp8dUNvLEtGkhuC8H8fsp1+UDZatsGeJJ2jez6kRXbxaZ7Nz+TBz1DVM81VFtdBYi3kwd9Ff5nFqw5rCpsI1bC5kQ1BDucggAy6YxvYGshhfXl3XdwUX5dfQEClLdarrtKMBSJ5P03Yak8Yvlusl0ZWmhTkO6k9nZgfB0PO33MLOYy+A7I0O+uQFAh4IOfZmjQZXEe9+D9zCXDUakaZUpSdJg/5JoIiH9jIKVpybh1bx+E4HRVpCnQtXU2ufFKYym77rfi8M2OCXrBsslhaTZsIzmp69gTS+64hdXWEPCYPg9xKXSDazoQXd9J8gY+JegFsNBtaWc3I5Cc0glTq1q5OUgN9TKX67cCGIPH+29No4uAc3kD+QdQXrf9pyN/r/podPiwFFyOcFB/Nbm1iXmV4DSu1DjJQQyb4k+1fE3oXPPQZq/S9KMnbziENrUYTYxVle//hYbHILj5m87O9Z565zgRuKCvH9Sde+wUCeAQAAA==
+    Metadata:
+      aws:cdk:path: lab-11-stack/CDKMetadata/Default
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+
