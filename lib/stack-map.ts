@@ -1,8 +1,8 @@
 import { App, Stack, StackProps } from 'aws-cdk-lib';
 
-import { Lab3, Lab4, Lab5, Lab6, Lab7, Lab8 } from './ec2';
-import { Lab9, Lab10, Lab11, Lab12, Lab13, Lab14 } from './s3';
-import { Lab1, Lab2 } from './vpc';
+import * as ec2Labs from './ec2';
+import * as s3Labs from './s3';
+import * as vpcLabs from './vpc';
 
 type LabStackConstructor = new (
   // eslint-disable-next-line no-unused-vars
@@ -14,20 +14,9 @@ type LabStackConstructor = new (
 ) => Stack;
 
 const labStackConstructors: LabStackConstructor[] = [
-  Lab1,
-  Lab2,
-  Lab3,
-  Lab4,
-  Lab5,
-  Lab6,
-  Lab7,
-  Lab8,
-  Lab9,
-  Lab10,
-  Lab11,
-  Lab12,
-  Lab13,
-  Lab14,
+  ...Object.values(vpcLabs),
+  ...Object.values(ec2Labs),
+  ...Object.values(s3Labs),
 ];
 
 const LAB_NUMBER = 14;
