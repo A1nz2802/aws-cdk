@@ -13,19 +13,23 @@ type LabStackConstructor = new (
   props?: StackProps,
 ) => Stack;
 
-const labStackConstructors: LabStackConstructor[] = [
-  ...Object.values(vpcLabs),
-  ...Object.values(ec2Labs),
-  ...Object.values(s3Labs),
-];
+const importsArr = [ec2Labs, s3Labs, vpcLabs];
+
+const allLabConstructors: LabStackConstructor[] = importsArr.flatMap(
+  module => Object.values(module) as LabStackConstructor[],
+);
 
 const LAB_NUMBER = 14;
 
 export function createStack(app: App) {
-  const LabConstructor = labStackConstructors[LAB_NUMBER - 1];
+  const LabConstructor = allLabConstructors[LAB_NUMBER - 1];
 
   if (!LabConstructor) {
-    throw new Error(`Number lab stack is not defined: ${LAB_NUMBER}`);
+    throw new Error(`Lab stack ${LAB_NUMBER} not found`);
+  }
+
+  if (LAB_NUMBER < 1 || LAB_NUMBER > allLabConstructors.length) {
+    throw new Error(`Invalid lab number: ${LAB_NUMBER}`);
   }
 
   return new LabConstructor(app, `lab-${LAB_NUMBER}-stack`, {
