@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  VpcId:
+    Type: String
+Resources:
+  Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.0.1.0/24
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: NestedStackSubnet1
+Outputs:
+  Subnet1Id:
+    Description: Subnet 1 ID
+    Value: !Ref Subnet1
