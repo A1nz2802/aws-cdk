@@ -20,7 +20,7 @@ const allLabConstructors: LabStackConstructor[] = importsArr.flatMap(
   module => Object.values(module) as LabStackConstructor[],
 );
 
-const LAB_NUMBER = 15;
+const LAB_NUMBER = 16;
 
 export function createStack(app: App) {
   const LabConstructor = allLabConstructors[LAB_NUMBER - 1];
