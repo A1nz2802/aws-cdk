@@ -182,6 +182,7 @@ export class Lab17 extends Stack {
     //! For some reason this code doesn't works.
     //! https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environments-cfg-autoscaling-launch-templates.html
     //! Don't use Launch Configurations, use Launch Templates instead
+    //* Meiby I should try ebextensions the next time
     const ebEnv = new CfnEnvironment(this, 'Dev-env', {
       environmentName: 'Dev-env',
       applicationName: beanstalkApp.applicationName || 'MyApp',

@@ -3,6 +3,7 @@ import { App, Stack, StackProps } from 'aws-cdk-lib';
 import * as beanstalk from './beanstalk';
 import * as cloudformationLabs from './cloudformation';
 import * as ec2Labs from './ec2';
+import * as lambda from './lambda';
 import * as s3Labs from './s3';
 import * as vpcLabs from './vpc';
 
@@ -15,13 +16,20 @@ type LabStackConstructor = new (
   props?: StackProps,
 ) => Stack;
 
-const importsArr = [ec2Labs, s3Labs, vpcLabs, cloudformationLabs, beanstalk];
+const importsArr = [
+  ec2Labs,
+  s3Labs,
+  vpcLabs,
+  cloudformationLabs,
+  beanstalk,
+  lambda,
+];
 
 const allLabConstructors: LabStackConstructor[] = importsArr.flatMap(
   module => Object.values(module) as LabStackConstructor[],
 );
 
-const LAB_NUMBER = 17;
+const LAB_NUMBER = 20;
 
 export function createStack(app: App) {
   const LabConstructor = allLabConstructors[LAB_NUMBER - 1];
