@@ -15,3 +15,17 @@ aws lambda invoke --function-name MyLambda out
 ## Invoke function asynchronously
 
 aws lambda invoke --function-name MyLambda --invocation-type Event --payload ewogICJrZXkxIjogInZhbHVlMSIsCiAgImtleTIiOiAidmFsdWUyIiwKICAia2V5MyI6ICJ2YWx1ZTMiCn0= response.json
+
+# LABORATORY 22
+
+## Generate success message
+
+aws lambda invoke --function-name lambda22 --invocation-type Event --payload eyJTdWNjZXNzIjp0cnVlfQ== response.json
+
+{"Success":true}
+
+## Failure message
+
+{"Success":false}
+
+aws lambda invoke --function-name lambda22 --invocation-type Event --payload eyJTdWNjZXNzIjpmYWxzZX0= response.json
