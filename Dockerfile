@@ -1,6 +1,6 @@
-FROM node:22.14.0
+FROM node:24.4.1
 
-RUN apt update && apt upgrade && apt install curl groff mandoc less -y
+RUN apt update && apt upgrade -y && apt install curl groff mandoc less -y
 RUN wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.shrc" SHELL="$(which sh)" sh -
 
 ENV PNPM_HOME="/root/.local/share/pnpm"
