@@ -15,5 +15,6 @@ WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
 RUN cdk acknowledge 32775
+RUN cdk acknowledge 34892
 
 CMD ["pnpm", "run", "watch"]

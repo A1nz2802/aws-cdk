@@ -4,6 +4,7 @@ import * as beanstalk from './beanstalk';
 import * as cloudformationLabs from './cloudformation';
 import * as dynamodb from './dynamodb';
 import * as ec2Labs from './ec2';
+import * as eventbridge from './eventbridge';
 import * as lambda from './lambda';
 import * as s3Labs from './s3';
 import * as vpcLabs from './vpc';
@@ -25,13 +26,14 @@ const importsArr = [
   beanstalk,
   lambda,
   dynamodb,
+  eventbridge,
 ];
 
 const allLabConstructors: LabStackConstructor[] = importsArr.flatMap(
   module => Object.values(module) as LabStackConstructor[],
 );
 
-const LAB_NUMBER = 23;
+const LAB_NUMBER = 24;
 
 export function createStack(app: App) {
   const LabConstructor = allLabConstructors[LAB_NUMBER - 1];

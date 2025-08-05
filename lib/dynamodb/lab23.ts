@@ -12,7 +12,7 @@ export class Lab23 extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    this.templateOptions.description = '';
+    this.templateOptions.description = 'Create Dynamodb table';
 
     const forumTable = new Table(this, 'ForumTable', {
       tableName: 'forum',
