@@ -1,0 +1,152 @@
+Description: Creates a REST API with a Lambda proxy integration.
+Resources:
+  MyLambda25ServiceRole8B66A92B:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: lab-25-stack/MyLambda25/ServiceRole/Resource
+  MyLambda2554122CD2:
+    Type: AWS::Lambda::Function
+    Properties:
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: cdk-hnb659fds-assets-266735829330-us-east-1
+        S3Key: a95a0c825e2d6b11805ad008524d4cdc7c5baa9f6686c1aec7d33460289fad43.zip
+      Description: Simple lambda function
+      FunctionName: MyLambda25
+      Handler: index.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - MyLambda25ServiceRole8B66A92B
+          - Arn
+      Runtime: python3.13
+    DependsOn:
+      - MyLambda25ServiceRole8B66A92B
+    Metadata:
+      aws:cdk:path: lab-25-stack/MyLambda25/Resource
+      aws:asset:path: asset.a95a0c825e2d6b11805ad008524d4cdc7c5baa9f6686c1aec7d33460289fad43
+      aws:asset:is-bundled: false
+      aws:asset:property: Code
+  MyApiGateway04A753E5:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Name: MyApiGateway
+    Metadata:
+      aws:cdk:path: lab-25-stack/MyApiGateway/Resource
+  MyApiGatewayhelloworldE9910CDD:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId:
+        Fn::GetAtt:
+          - MyApiGateway04A753E5
+          - RootResourceId
+      PathPart: helloworld
+      RestApiId:
+        Ref: MyApiGateway04A753E5
+    Metadata:
+      aws:cdk:path: lab-25-stack/MyApiGateway/Default/helloworld/Resource
+  MyApiGatewayhelloworldANYApiPermissionlab25stackMyApiGateway2CD0976DANYhelloworld42C2C64D:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - MyLambda2554122CD2
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:aws:execute-api:us-east-1:266735829330:"
+            - Ref: MyApiGateway04A753E5
+            - /*/*/helloworld
+    Metadata:
+      aws:cdk:path: lab-25-stack/MyApiGateway/Default/helloworld/ANY/ApiPermission.lab25stackMyApiGateway2CD0976D.ANY..helloworld
+  MyApiGatewayhelloworldANYApiPermissionTestlab25stackMyApiGateway2CD0976DANYhelloworld71B5383F:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - MyLambda2554122CD2
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:aws:execute-api:us-east-1:266735829330:"
+            - Ref: MyApiGateway04A753E5
+            - /test-invoke-stage/*/helloworld
+    Metadata:
+      aws:cdk:path: lab-25-stack/MyApiGateway/Default/helloworld/ANY/ApiPermission.Test.lab25stackMyApiGateway2CD0976D.ANY..helloworld
+  MyApiGatewayhelloworldANY7EB9EC53:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: ANY
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri:
+          Fn::Join:
+            - ""
+            - - arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/
+              - Fn::GetAtt:
+                  - MyLambda2554122CD2
+                  - Arn
+              - /invocations
+      ResourceId:
+        Ref: MyApiGatewayhelloworldE9910CDD
+      RestApiId:
+        Ref: MyApiGateway04A753E5
+    Metadata:
+      aws:cdk:path: lab-25-stack/MyApiGateway/Default/helloworld/ANY/Resource
+  MyDeployment74F2406B3580d6e7d1fd26dc9cf9cd1bc53c73a6:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId:
+        Ref: MyApiGateway04A753E5
+    DependsOn:
+      - MyApiGatewayhelloworldANY7EB9EC53
+    Metadata:
+      aws:cdk:path: lab-25-stack/MyDeployment/Resource
+      aws:cdk:do-not-refactor: true
+  MyStage572B0482:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId:
+        Ref: MyDeployment74F2406B3580d6e7d1fd26dc9cf9cd1bc53c73a6
+      RestApiId:
+        Ref: MyApiGateway04A753E5
+      StageName: prod
+    Metadata:
+      aws:cdk:path: lab-25-stack/MyStage/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/1VSTW/bMAz9LdWxULQu7WHIzek+MGDrAnc3wyhYiXHU2JIgygsMwf99kGyn7onU4yMfP7QV27sv4u4GLrSR6rxp9auIzwHkmcOFXmIL3asCEb/3RgZtTRXZcXafoEO2Y7eMM4UkvXYJnRHfm6CvcfDypAPK0PsFklYt7gmMatHn11jzx6NZ1JJ/QN9pIm3NyDV0Ipa2xSoyIOo7VPuB7SJzXhupHbSFlLY3YdHNnJRQyGtzI2cdGGhQHWyrpUZiuyp+wIbCz9x6aiiVGDndvwARBhJFMpzuxb6XZwx7IKxqDk43EPACg4glUiicriLzk7daFxrlrDbh7+CyOCu//fj556n4xeq0S9fage2O0BLO6lMFXiLZ3kvMcuyW1VekisyBx+vgDsLpAD6sdrpQ+W8MJ6umxjKynCEEN8VmQJuAjYfVVW0+Ma2qTgn8a266QxPSZZxeMd5D/DlAk1qlZD98n4WyysvkcXwfMQ+cF59C2jQjN1aheKNP/7YP4kF8vnkjrTfz1xPlZP8D+B0rxuICAAA=
+    Metadata:
+      aws:cdk:path: lab-25-stack/CDKMetadata/Default
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+

@@ -1,0 +1,233 @@
+Description: ""
+Resources:
+  MyRoleF48FFE04:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:UpdateItem
+                Effect: Allow
+                Resource: "*"
+                Sid: Stmt1428341300017
+              - Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
+          PolicyName: LambdaApigatewayPolicy
+      RoleName: lambda-apigateway-role
+    Metadata:
+      aws:cdk:path: lab-26-stack/MyRole/Resource
+  MyLambda2554122CD2:
+    Type: AWS::Lambda::Function
+    Properties:
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: cdk-hnb659fds-assets-266735829330-us-east-1
+        S3Key: c3e75e4ea47479ee6c4cf350c1ab090d884f9c906ec19f0790e0886792002c4c.zip
+      Description: Simple lambda function
+      FunctionName: LambdaFunctionOverHttps
+      Handler: index.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - MyRoleF48FFE04
+          - Arn
+      Runtime: python3.13
+    DependsOn:
+      - MyRoleF48FFE04
+    Metadata:
+      aws:cdk:path: lab-26-stack/MyLambda25/Resource
+      aws:asset:path: asset.c3e75e4ea47479ee6c4cf350c1ab090d884f9c906ec19f0790e0886792002c4c
+      aws:asset:is-bundled: false
+      aws:asset:property: Code
+  MyApiGateway04A753E5:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Name: DynamoDBOperations
+    Metadata:
+      aws:cdk:path: lab-26-stack/MyApiGateway/Resource
+  MyApiGatewayDeployment44AAC0313d12265dbb1e1f32c056b37b04f12d17:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      Description: Automatically created by the RestApi construct
+      RestApiId:
+        Ref: MyApiGateway04A753E5
+    DependsOn:
+      - MyApiGatewaydynamodbmanagerPOST95E6F9A9
+      - MyApiGatewaydynamodbmanager76D28881
+    Metadata:
+      aws:cdk:path: lab-26-stack/MyApiGateway/Deployment/Resource
+      aws:cdk:do-not-refactor: true
+  MyApiGatewayDeploymentStageprodEBC77C1B:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId:
+        Ref: MyApiGatewayDeployment44AAC0313d12265dbb1e1f32c056b37b04f12d17
+      RestApiId:
+        Ref: MyApiGateway04A753E5
+      StageName: prod
+    Metadata:
+      aws:cdk:path: lab-26-stack/MyApiGateway/DeploymentStage.prod/Resource
+  MyApiGatewaydynamodbmanager76D28881:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId:
+        Fn::GetAtt:
+          - MyApiGateway04A753E5
+          - RootResourceId
+      PathPart: dynamodbmanager
+      RestApiId:
+        Ref: MyApiGateway04A753E5
+    Metadata:
+      aws:cdk:path: lab-26-stack/MyApiGateway/Default/dynamodbmanager/Resource
+  MyApiGatewaydynamodbmanagerPOSTApiPermissionlab26stackMyApiGatewayE0EE6E27POSTdynamodbmanager3DA60112:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - MyLambda2554122CD2
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:aws:execute-api:us-east-1:266735829330:"
+            - Ref: MyApiGateway04A753E5
+            - /
+            - Ref: MyApiGatewayDeploymentStageprodEBC77C1B
+            - /POST/dynamodbmanager
+    Metadata:
+      aws:cdk:path: lab-26-stack/MyApiGateway/Default/dynamodbmanager/POST/ApiPermission.lab26stackMyApiGatewayE0EE6E27.POST..dynamodbmanager
+  MyApiGatewaydynamodbmanagerPOSTApiPermissionTestlab26stackMyApiGatewayE0EE6E27POSTdynamodbmanager9B482009:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - MyLambda2554122CD2
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:aws:execute-api:us-east-1:266735829330:"
+            - Ref: MyApiGateway04A753E5
+            - /test-invoke-stage/POST/dynamodbmanager
+    Metadata:
+      aws:cdk:path: lab-26-stack/MyApiGateway/Default/dynamodbmanager/POST/ApiPermission.Test.lab26stackMyApiGatewayE0EE6E27.POST..dynamodbmanager
+  MyApiGatewaydynamodbmanagerPOST95E6F9A9:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      Integration:
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - ResponseParameters:
+              method.response.header.Content-Type: "'application/json'"
+            ResponseTemplates:
+              application/json: $input.json('$')
+            StatusCode: "200"
+          - ResponseParameters:
+              method.response.header.Content-Type: "'application/json'"
+            ResponseTemplates:
+              application/json: $input.json('$')
+            SelectionPattern: .*"statusCode":s*400.*
+            StatusCode: "400"
+          - ResponseParameters:
+              method.response.header.Content-Type: "'application/json'"
+            ResponseTemplates:
+              application/json: '{"error": "Internal server error"}'
+            SelectionPattern: .*"statusCode":s*500.*
+            StatusCode: "500"
+        PassthroughBehavior: NEVER
+        RequestTemplates:
+          application/json: $input.json('$')
+        Type: AWS
+        Uri:
+          Fn::Join:
+            - ""
+            - - arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/
+              - Fn::GetAtt:
+                  - MyLambda2554122CD2
+                  - Arn
+              - /invocations
+      MethodResponses:
+        - ResponseParameters:
+            method.response.header.Content-Type: true
+          StatusCode: "200"
+        - ResponseParameters:
+            method.response.header.Content-Type: true
+          StatusCode: "400"
+        - ResponseParameters:
+            method.response.header.Content-Type: true
+          StatusCode: "500"
+      ResourceId:
+        Ref: MyApiGatewaydynamodbmanager76D28881
+      RestApiId:
+        Ref: MyApiGateway04A753E5
+    Metadata:
+      aws:cdk:path: lab-26-stack/MyApiGateway/Default/dynamodbmanager/POST/Resource
+  MyTable794EDED1:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      DeletionProtectionEnabled: false
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TableName: lambda-apigateway
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: lab-26-stack/MyTable/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/81US0/cMBD+LfiIjEsXDhW3hT6EymO1cIsiNGvP7hoc27InRSsr/72yk5Ag0UMPlXry6JtvHv5m7IVYnH4Rp0fwGk+kejkxeiPSA4F84fAan5KGRqS1M1glFpzBO2iQXbBjxhnE2DaoLg/sIjEftJXag1lK6VpL7zg5filJO1vgjjNtjba4ckZLjbFHa361tZnacQPNRoFI31tbwqrEtoM5a0BhlEH7t7ychdaSnhoMcq8JJbVhhKRTo7kHqwyGMdIZnLUxFs72CkOjY9TOdjyePUGMSFEs88Hjmbhs5QvSJUSsag5e74DwFQ4irTHS0ussXG/NWkervNOWHg8+X79i628/ru/vljesHnToQ/hX9MYdGrRUpQ8uDF6PF0ACbSf6ICpPDJR6dDdupyWYa8UuqtTVf8RL8SkLfyDYYSk9QjOVipOvMbo2SCwSsGNWvyFVYh4Cvm2DB9qvIMxTjFR+i7R3qherIOOYiHzvGwBtCXcBZiK4okjMa9gU5hqjdzYWZROLBNTGq2nyYXCvIECDhGHS6p9w626Q+/Zdd3/XXP3f5Chz61N0XB0sNE5tRHqETfklKJ+zVfcQSOcB/cTyU9jJRQefzYf8Iyg0mFmr4PKTLdPdgonY1yvZu25arZIgL1t5iHkTtd1l5n1LvqWOW6dQPMdPvxbn4lx8PnqOWp8MH4RY9+dvkLDyqf4EAAA=
+    Metadata:
+      aws:cdk:path: lab-26-stack/CDKMetadata/Default
+Outputs:
+  MyApiGatewayEndpoint84AE9DBF:
+    Value:
+      Fn::Join:
+        - ""
+        - - https://
+          - Ref: MyApiGateway04A753E5
+          - .execute-api.us-east-1.
+          - Ref: AWS::URLSuffix
+          - /
+          - Ref: MyApiGatewayDeploymentStageprodEBC77C1B
+          - /
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+

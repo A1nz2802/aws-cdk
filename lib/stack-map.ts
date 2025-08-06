@@ -1,5 +1,6 @@
 import { App, Stack, StackProps } from 'aws-cdk-lib';
 
+import * as apigateway from './apigateway';
 import * as beanstalk from './beanstalk';
 import * as cloudformationLabs from './cloudformation';
 import * as dynamodb from './dynamodb';
@@ -27,13 +28,14 @@ const importsArr = [
   lambda,
   dynamodb,
   eventbridge,
+  apigateway,
 ];
 
 const allLabConstructors: LabStackConstructor[] = importsArr.flatMap(
   module => Object.values(module) as LabStackConstructor[],
 );
 
-const LAB_NUMBER = 24;
+const LAB_NUMBER = 26;
 
 export function createStack(app: App) {
   const LabConstructor = allLabConstructors[LAB_NUMBER - 1];

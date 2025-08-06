@@ -1,0 +1,247 @@
+Description: ""
+Resources:
+  mysnstopic0298F55C43:
+    Type: AWS::SNS::Topic
+    Properties:
+      FifoTopic: false
+      TopicName: topic-eventbridge
+    Metadata:
+      aws:cdk:path: lab-24-stack/my-sns-topic-02/Resource
+  mysnstopic02PolicyF7448E8F:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: sns:Publish
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Resource:
+              Ref: mysnstopic0298F55C43
+            Sid: "0"
+        Version: "2012-10-17"
+      Topics:
+        - Ref: mysnstopic0298F55C43
+    Metadata:
+      aws:cdk:path: lab-24-stack/my-sns-topic-02/Policy/Resource
+  mysubscription0679088B:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: a1nzdev28@gmail.com
+      Protocol: email
+      TopicArn:
+        Ref: mysnstopic0298F55C43
+    Metadata:
+      aws:cdk:path: lab-24-stack/my-subscription/Resource
+  MyManagementEventsTrailS31771FC11:
+    Type: AWS::S3::Bucket
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: lab-24-stack/MyManagementEventsTrail/S3/Resource
+  MyManagementEventsTrailS3Policy355D2B3C:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: MyManagementEventsTrailS31771FC11
+      PolicyDocument:
+        Statement:
+          - Action: s3:*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+            Effect: Deny
+            Principal:
+              AWS: "*"
+            Resource:
+              - Fn::GetAtt:
+                  - MyManagementEventsTrailS31771FC11
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - MyManagementEventsTrailS31771FC11
+                        - Arn
+                    - /*
+          - Action: s3:GetBucketAcl
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Resource:
+              Fn::GetAtt:
+                - MyManagementEventsTrailS31771FC11
+                - Arn
+          - Action: s3:PutObject
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - MyManagementEventsTrailS31771FC11
+                      - Arn
+                  - /AWSLogs/266735829330/*
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: lab-24-stack/MyManagementEventsTrail/S3/Policy/Resource
+  MyManagementEventsTrailLogGroup5ED6B28B:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 365
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: lab-24-stack/MyManagementEventsTrail/LogGroup/Resource
+  MyManagementEventsTrailLogsRole00942692:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: lab-24-stack/MyManagementEventsTrail/LogsRole/Resource
+  MyManagementEventsTrailLogsRoleDefaultPolicy6625AC38:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - MyManagementEventsTrailLogGroup5ED6B28B
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: MyManagementEventsTrailLogsRoleDefaultPolicy6625AC38
+      Roles:
+        - Ref: MyManagementEventsTrailLogsRole00942692
+    Metadata:
+      aws:cdk:path: lab-24-stack/MyManagementEventsTrail/LogsRole/DefaultPolicy/Resource
+  MyManagementEventsTrailA9F0DFA1:
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      CloudWatchLogsLogGroupArn:
+        Fn::GetAtt:
+          - MyManagementEventsTrailLogGroup5ED6B28B
+          - Arn
+      CloudWatchLogsRoleArn:
+        Fn::GetAtt:
+          - MyManagementEventsTrailLogsRole00942692
+          - Arn
+      EnableLogFileValidation: true
+      EventSelectors: []
+      IncludeGlobalServiceEvents: true
+      IsLogging: true
+      IsMultiRegionTrail: true
+      S3BucketName:
+        Ref: MyManagementEventsTrailS31771FC11
+      TrailName: my-managment-events
+    DependsOn:
+      - MyManagementEventsTrailLogsRoleDefaultPolicy6625AC38
+      - MyManagementEventsTrailLogsRole00942692
+      - MyManagementEventsTrailS3Policy355D2B3C
+    Metadata:
+      aws:cdk:path: lab-24-stack/MyManagementEventsTrail/Resource
+  MyInstanceInstanceSecurityGroupC5EFFA01:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: lab-24-stack/My-Instance/InstanceSecurityGroup
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      Tags:
+        - Key: Name
+          Value: lab-24-stack/My-Instance
+      VpcId: vpc-0626cc74f8dff326e
+    Metadata:
+      aws:cdk:path: lab-24-stack/My-Instance/InstanceSecurityGroup/Resource
+  MyInstanceInstanceRole9BE864FE:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+        Version: "2012-10-17"
+      Tags:
+        - Key: Name
+          Value: lab-24-stack/My-Instance
+    Metadata:
+      aws:cdk:path: lab-24-stack/My-Instance/InstanceRole/Resource
+  MyInstanceInstanceProfileD38B4334:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - Ref: MyInstanceInstanceRole9BE864FE
+    Metadata:
+      aws:cdk:path: lab-24-stack/My-Instance/InstanceProfile
+  MyInstance9C7133FA:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: us-east-1a
+      IamInstanceProfile:
+        Ref: MyInstanceInstanceProfileD38B4334
+      ImageId:
+        Ref: SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61x8664C96584B6F00A464EAD1953AFF4B05118Parameter
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - Fn::GetAtt:
+            - MyInstanceInstanceSecurityGroupC5EFFA01
+            - GroupId
+      SubnetId: subnet-03e031c4f2155539a
+      Tags:
+        - Key: Name
+          Value: lab-24-stack/My-Instance
+      UserData:
+        Fn::Base64: "#!/bin/bash"
+    DependsOn:
+      - MyInstanceInstanceRole9BE864FE
+    Metadata:
+      aws:cdk:path: lab-24-stack/My-Instance/Resource
+  ec2stoppedruleBAFB18FD:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source:
+          - aws.ec2
+        detail-type:
+          - EC2 Instance State-change Notification
+        detail:
+          state:
+            - terminated
+      Name: ec2-stop-instnaces-event
+      State: ENABLED
+      Targets:
+        - Arn:
+            Ref: mysnstopic0298F55C43
+          Id: Target0
+    Metadata:
+      aws:cdk:path: lab-24-stack/ec2-stopped-rule/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/51SXWvbMBT9LdVjUbQu7crwWxrGCIQtxIY9mFAU+TpRI0tGHylB6L8PWVbj0oeyPdgX33N0fK7umZP53Xdyd0NfzYw1p5nge+JLS9kJ01fz7I00xFeq56z2yMb6i3aACnSLMGp5q1DRUmEg7PCylQMRD++NEpxd8iGDihrdot2Elgi4dHvDNO8tVzKzR/leK6uYEqhA0FEuEEYgm15xaQdGEpsKBMyEco3VlAviq1iiZqwT2wZkU6llZP6hlh3X6mBQYbXLU0R+wOae+CfHTmBrj0C2SjMoy/WUmWCcytvE++FzYnGKByzUwRC/VoefWrm+9kiDBRnto+L+8Vs6kuGAOe2I3yoBtUfUGNdB83RBhUe95pLxnooFY8qNd4JHTjywYEk0+gjYI9o0ldrkU8kOKmofdgNqLWXHlRRcwhs27OxT8P9dDbPGLh5vL5Lz7yoVkQ8uPrabprTUQgfSmnGgQXiM2LKVK2kslQw2WrVcQMDA5sTnbu3Ruc+p42OzuvQ5MB1lRy5h1dED5LWWwJzm9pKXeBWgQqjXhRC/nd0rJ5sUmGt/1Z8fr9g1x1PBqeeA4RwnI37rhhRoJ2AS5wHdUGtBy7gBo5xmGWzAUi4ms6TGu1D8eCdQ/4tCvv+K6kOM/PXuo9cQ8BaS2LDYT560M6ppBxZ0wFI1QF7Ml/P8gTyQrzcvhvOZdtLyDsg21b+R9+qNwAQAAA==
+    Metadata:
+      aws:cdk:path: lab-24-stack/CDKMetadata/Default
+Parameters:
+  SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61x8664C96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+
