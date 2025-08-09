@@ -6,3 +6,4 @@ dist
 .cdk.staging
 cdk.out
 *.pub
+*.pem

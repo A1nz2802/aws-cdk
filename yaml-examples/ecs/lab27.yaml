@@ -1,0 +1,644 @@
+Description: ""
+Resources:
+  MyVPCAFB07A31:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.1.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: MyVPC
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyVPC/Resource
+  MyVPCpublicsub1Subnet1Subnet6BCD993E:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 10.1.0.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: public-sub-1
+        - Key: aws-cdk:subnet-type
+          Value: Public
+        - Key: Name
+          Value: lab-27-stack/MyVPC/public-sub-1Subnet1
+      VpcId:
+        Ref: MyVPCAFB07A31
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyVPC/public-sub-1Subnet1/Subnet
+  MyVPCpublicsub1Subnet1RouteTable2B36E676:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: lab-27-stack/MyVPC/public-sub-1Subnet1
+      VpcId:
+        Ref: MyVPCAFB07A31
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyVPC/public-sub-1Subnet1/RouteTable
+  MyVPCpublicsub1Subnet1RouteTableAssociationC92D3FD2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: MyVPCpublicsub1Subnet1RouteTable2B36E676
+      SubnetId:
+        Ref: MyVPCpublicsub1Subnet1Subnet6BCD993E
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyVPC/public-sub-1Subnet1/RouteTableAssociation
+  MyVPCpublicsub1Subnet1DefaultRouteC91B4A73:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: MyVPCIGW30AB6DD6
+      RouteTableId:
+        Ref: MyVPCpublicsub1Subnet1RouteTable2B36E676
+    DependsOn:
+      - MyVPCVPCGWE6F260E1
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyVPC/public-sub-1Subnet1/DefaultRoute
+  MyVPCIGW30AB6DD6:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyVPC
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyVPC/IGW
+  MyVPCVPCGWE6F260E1:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Ref: MyVPCIGW30AB6DD6
+      VpcId:
+        Ref: MyVPCAFB07A31
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyVPC/VPCGW
+  MySG94FE69A8:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG for ecs lab
+      GroupName: MySG
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: SSH Access
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0
+          Description: HTTP Access
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+      VpcId:
+        Ref: MyVPCAFB07A31
+    Metadata:
+      aws:cdk:path: lab-27-stack/MySG/Resource
+  MyCluster4C1BA579:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: myecs-cluster
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/Resource
+  MyClusterMyCapacityInstanceSecurityGroup2D1A7138:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: lab-27-stack/MyCluster/MyCapacity/InstanceSecurityGroup
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      Tags:
+        - Key: Name
+          Value: lab-27-stack/MyCluster/MyCapacity
+      VpcId:
+        Ref: MyVPCAFB07A31
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/InstanceSecurityGroup/Resource
+  MyClusterMyCapacityInstanceRole161BDB3A:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+        Version: "2012-10-17"
+      Tags:
+        - Key: Name
+          Value: lab-27-stack/MyCluster/MyCapacity
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/InstanceRole/Resource
+  MyClusterMyCapacityInstanceRoleDefaultPolicy611603EE:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - ecs:DeregisterContainerInstance
+              - ecs:RegisterContainerInstance
+              - ecs:Submit*
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - MyCluster4C1BA579
+                - Arn
+          - Action:
+              - ecs:Poll
+              - ecs:StartTelemetrySession
+            Condition:
+              ArnEquals:
+                ecs:cluster:
+                  Fn::GetAtt:
+                    - MyCluster4C1BA579
+                    - Arn
+            Effect: Allow
+            Resource: "*"
+          - Action:
+              - ecr:GetAuthorizationToken
+              - ecs:DiscoverPollEndpoint
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: MyClusterMyCapacityInstanceRoleDefaultPolicy611603EE
+      Roles:
+        - Ref: MyClusterMyCapacityInstanceRole161BDB3A
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/InstanceRole/DefaultPolicy/Resource
+  MyClusterMyCapacityInstanceProfileAC8A7DEC:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - Ref: MyClusterMyCapacityInstanceRole161BDB3A
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/InstanceProfile
+  MyClusterMyCapacityLaunchTemplate99FAFDBD:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        IamInstanceProfile:
+          Arn:
+            Fn::GetAtt:
+              - MyClusterMyCapacityInstanceProfileAC8A7DEC
+              - Arn
+        ImageId:
+          Ref: SsmParameterValueawsserviceecsoptimizedamiamazonlinux2023recommendedimageidC96584B6F00A464EAD1953AFF4B05118Parameter
+        InstanceType: t2.micro
+        KeyName: EcsLabKeyv2
+        Monitoring:
+          Enabled: false
+        SecurityGroupIds:
+          - Fn::GetAtt:
+              - MyClusterMyCapacityInstanceSecurityGroup2D1A7138
+              - GroupId
+          - Fn::GetAtt:
+              - MySG94FE69A8
+              - GroupId
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: lab-27-stack/MyCluster/MyCapacity/LaunchTemplate
+          - ResourceType: volume
+            Tags:
+              - Key: Name
+                Value: lab-27-stack/MyCluster/MyCapacity/LaunchTemplate
+        UserData:
+          Fn::Base64:
+            Fn::Join:
+              - ""
+              - - |-
+                  #!/bin/bash
+                  echo ECS_CLUSTER=
+                - Ref: MyCluster4C1BA579
+                - |-2
+                   >> /etc/ecs/ecs.config
+                  sudo yum install -y ec2-instance-connect
+      TagSpecifications:
+        - ResourceType: launch-template
+          Tags:
+            - Key: Name
+              Value: lab-27-stack/MyCluster/MyCapacity/LaunchTemplate
+    DependsOn:
+      - MyClusterMyCapacityInstanceRoleDefaultPolicy611603EE
+      - MyClusterMyCapacityInstanceRole161BDB3A
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/LaunchTemplate/Resource
+  MyClusterMyCapacityASG39AB893C:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId:
+          Ref: MyClusterMyCapacityLaunchTemplate99FAFDBD
+        Version:
+          Fn::GetAtt:
+            - MyClusterMyCapacityLaunchTemplate99FAFDBD
+            - LatestVersionNumber
+      MaxSize: "1"
+      MinSize: "1"
+      Tags:
+        - Key: Name
+          PropagateAtLaunch: true
+          Value: lab-27-stack/MyCluster/MyCapacity
+      VPCZoneIdentifier:
+        - Ref: MyVPCpublicsub1Subnet1Subnet6BCD993E
+    UpdatePolicy:
+      AutoScalingReplacingUpdate:
+        WillReplace: true
+      AutoScalingScheduledAction:
+        IgnoreUnmodifiedGroupSizeProperties: true
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/ASG
+  MyClusterMyCapacityDrainECSHookFunctionServiceRole7B383E15:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Tags:
+        - Key: Name
+          Value: lab-27-stack/MyCluster/MyCapacity
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/DrainECSHook/Function/ServiceRole/Resource
+  MyClusterMyCapacityDrainECSHookFunctionC71F97BC:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import boto3, json, os, time
+
+          ecs = boto3.client('ecs')
+          autoscaling = boto3.client('autoscaling')
+
+
+          def lambda_handler(event, context):
+            print(json.dumps(dict(event, ResponseURL='...')))
+            cluster = os.environ['CLUSTER']
+            snsTopicArn = event['Records'][0]['Sns']['TopicArn']
+            lifecycle_event = json.loads(event['Records'][0]['Sns']['Message'])
+            instance_id = lifecycle_event.get('EC2InstanceId')
+            if not instance_id:
+              print('Got event without EC2InstanceId: %s', json.dumps(dict(event, ResponseURL='...')))
+              return
+
+            instance_arn = container_instance_arn(cluster, instance_id)
+            print('Instance %s has container instance ARN %s' % (lifecycle_event['EC2InstanceId'], instance_arn))
+
+            if not instance_arn:
+              return
+
+            task_arns = container_instance_task_arns(cluster, instance_arn)
+
+            if task_arns:
+              print('Instance ARN %s has task ARNs %s' % (instance_arn, ', '.join(task_arns)))
+
+            while has_tasks(cluster, instance_arn, task_arns):
+              time.sleep(10)
+
+            try:
+              print('Terminating instance %s' % instance_id)
+              autoscaling.complete_lifecycle_action(
+                  LifecycleActionResult='CONTINUE',
+                  **pick(lifecycle_event, 'LifecycleHookName', 'LifecycleActionToken', 'AutoScalingGroupName'))
+            except Exception as e:
+              # Lifecycle action may have already completed.
+              print(str(e))
+
+
+          def container_instance_arn(cluster, instance_id):
+            """Turn an instance ID into a container instance ARN."""
+            arns = ecs.list_container_instances(cluster=cluster, filter='ec2InstanceId==' + instance_id)['containerInstanceArns']
+            if not arns:
+              return None
+            return arns[0]
+
+          def container_instance_task_arns(cluster, instance_arn):
+            """Fetch tasks for a container instance ARN."""
+            arns = ecs.list_tasks(cluster=cluster, containerInstance=instance_arn)['taskArns']
+            return arns
+
+          def has_tasks(cluster, instance_arn, task_arns):
+            """Return True if the instance is running tasks for the given cluster."""
+            instances = ecs.describe_container_instances(cluster=cluster, containerInstances=[instance_arn])['containerInstances']
+            if not instances:
+              return False
+            instance = instances[0]
+
+            if instance['status'] == 'ACTIVE':
+              # Start draining, then try again later
+              set_container_instance_to_draining(cluster, instance_arn)
+              return True
+
+            task_count = None
+
+            if task_arns:
+              # Fetch details for tasks running on the container instance
+              tasks = ecs.describe_tasks(cluster=cluster, tasks=task_arns)['tasks']
+              if tasks:
+                # Consider any non-stopped tasks as running
+                task_count = sum(task['lastStatus'] != 'STOPPED' for task in tasks) + instance['pendingTasksCount']
+
+            if not task_count:
+              # Fallback to instance task counts if detailed task information is unavailable
+              task_count = instance['runningTasksCount'] + instance['pendingTasksCount']
+
+            print('Instance %s has %s tasks' % (instance_arn, task_count))
+
+            return task_count > 0
+
+          def set_container_instance_to_draining(cluster, instance_arn):
+            ecs.update_container_instances_state(
+                cluster=cluster,
+                containerInstances=[instance_arn], status='DRAINING')
+
+
+          def pick(dct, *keys):
+            """Pick a subset of a dict."""
+            return {k: v for k, v in dct.items() if k in keys}
+      Environment:
+        Variables:
+          CLUSTER:
+            Ref: MyCluster4C1BA579
+      Handler: index.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - MyClusterMyCapacityDrainECSHookFunctionServiceRole7B383E15
+          - Arn
+      Runtime: python3.9
+      Tags:
+        - Key: Name
+          Value: lab-27-stack/MyCluster/MyCapacity
+      Timeout: 310
+    DependsOn:
+      - MyClusterMyCapacityDrainECSHookFunctionServiceRole7B383E15
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/DrainECSHook/Function/Resource
+  MyClusterMyCapacityDrainECSHookFunctionAllowInvokelab27stackMyClusterMyCapacityLifecycleHookDrainHookTopic8434F639C1F79DF5:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - MyClusterMyCapacityDrainECSHookFunctionC71F97BC
+          - Arn
+      Principal: sns.amazonaws.com
+      SourceArn:
+        Ref: MyClusterMyCapacityLifecycleHookDrainHookTopicA9205E25
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/DrainECSHook/Function/AllowInvoke:lab27stackMyClusterMyCapacityLifecycleHookDrainHookTopic8434F639
+  MyClusterMyCapacityDrainECSHookFunctionTopic03C1AB4C:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint:
+        Fn::GetAtt:
+          - MyClusterMyCapacityDrainECSHookFunctionC71F97BC
+          - Arn
+      Protocol: lambda
+      TopicArn:
+        Ref: MyClusterMyCapacityLifecycleHookDrainHookTopicA9205E25
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/DrainECSHook/Function/Topic/Resource
+  MyClusterMyCapacityDrainECSHookFunctioninlinePolicyAddedToExecutionRole098FB4F7F:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - ec2:DescribeHosts
+              - ec2:DescribeInstanceAttribute
+              - ec2:DescribeInstanceStatus
+              - ec2:DescribeInstances
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: MyClusterMyCapacityDrainECSHookFunctioninlinePolicyAddedToExecutionRole098FB4F7F
+      Roles:
+        - Ref: MyClusterMyCapacityDrainECSHookFunctionServiceRole7B383E15
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/DrainECSHook/Function/inlinePolicyAddedToExecutionRole-0/Resource
+  MyClusterMyCapacityDrainECSHookFunctioninlinePolicyAddedToExecutionRole1AC7585C5:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: autoscaling:CompleteLifecycleAction
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - arn:aws:autoscaling:us-east-1:266735829330:autoScalingGroup:*:autoScalingGroupName/
+                  - Ref: MyClusterMyCapacityASG39AB893C
+        Version: "2012-10-17"
+      PolicyName: MyClusterMyCapacityDrainECSHookFunctioninlinePolicyAddedToExecutionRole1AC7585C5
+      Roles:
+        - Ref: MyClusterMyCapacityDrainECSHookFunctionServiceRole7B383E15
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/DrainECSHook/Function/inlinePolicyAddedToExecutionRole-1/Resource
+  MyClusterMyCapacityDrainECSHookFunctioninlinePolicyAddedToExecutionRole21E89D4C3:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - ecs:DescribeContainerInstances
+              - ecs:DescribeTasks
+            Condition:
+              ArnEquals:
+                ecs:cluster:
+                  Fn::GetAtt:
+                    - MyCluster4C1BA579
+                    - Arn
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: MyClusterMyCapacityDrainECSHookFunctioninlinePolicyAddedToExecutionRole21E89D4C3
+      Roles:
+        - Ref: MyClusterMyCapacityDrainECSHookFunctionServiceRole7B383E15
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/DrainECSHook/Function/inlinePolicyAddedToExecutionRole-2/Resource
+  MyClusterMyCapacityDrainECSHookFunctioninlinePolicyAddedToExecutionRole3ABEE7994:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - ecs:ListContainerInstances
+              - ecs:SubmitContainerStateChange
+              - ecs:SubmitTaskStateChange
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - MyCluster4C1BA579
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: MyClusterMyCapacityDrainECSHookFunctioninlinePolicyAddedToExecutionRole3ABEE7994
+      Roles:
+        - Ref: MyClusterMyCapacityDrainECSHookFunctionServiceRole7B383E15
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/DrainECSHook/Function/inlinePolicyAddedToExecutionRole-3/Resource
+  MyClusterMyCapacityDrainECSHookFunctioninlinePolicyAddedToExecutionRole42ACC75F6:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - ecs:ListTasks
+              - ecs:UpdateContainerInstancesState
+            Condition:
+              ArnEquals:
+                ecs:cluster:
+                  Fn::GetAtt:
+                    - MyCluster4C1BA579
+                    - Arn
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: MyClusterMyCapacityDrainECSHookFunctioninlinePolicyAddedToExecutionRole42ACC75F6
+      Roles:
+        - Ref: MyClusterMyCapacityDrainECSHookFunctionServiceRole7B383E15
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/DrainECSHook/Function/inlinePolicyAddedToExecutionRole-4/Resource
+  MyClusterMyCapacityLifecycleHookDrainHookTopicA9205E25:
+    Type: AWS::SNS::Topic
+    Properties:
+      Tags:
+        - Key: Name
+          Value: lab-27-stack/MyCluster/MyCapacity
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/LifecycleHookDrainHook/Topic/Resource
+  MyClusterMyCapacityLifecycleHookDrainHookRole66B190A5:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: autoscaling.amazonaws.com
+        Version: "2012-10-17"
+      Tags:
+        - Key: Name
+          Value: lab-27-stack/MyCluster/MyCapacity
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/LifecycleHookDrainHook/Role/Resource
+  MyClusterMyCapacityLifecycleHookDrainHookRoleDefaultPolicy0186ACB2:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: sns:Publish
+            Effect: Allow
+            Resource:
+              Ref: MyClusterMyCapacityLifecycleHookDrainHookTopicA9205E25
+        Version: "2012-10-17"
+      PolicyName: MyClusterMyCapacityLifecycleHookDrainHookRoleDefaultPolicy0186ACB2
+      Roles:
+        - Ref: MyClusterMyCapacityLifecycleHookDrainHookRole66B190A5
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/LifecycleHookDrainHook/Role/DefaultPolicy/Resource
+  MyClusterMyCapacityLifecycleHookDrainHook855A6FCE:
+    Type: AWS::AutoScaling::LifecycleHook
+    Properties:
+      AutoScalingGroupName:
+        Ref: MyClusterMyCapacityASG39AB893C
+      DefaultResult: CONTINUE
+      HeartbeatTimeout: 300
+      LifecycleTransition: autoscaling:EC2_INSTANCE_TERMINATING
+      NotificationTargetARN:
+        Ref: MyClusterMyCapacityLifecycleHookDrainHookTopicA9205E25
+      RoleARN:
+        Fn::GetAtt:
+          - MyClusterMyCapacityLifecycleHookDrainHookRole66B190A5
+          - Arn
+    DependsOn:
+      - MyClusterMyCapacityLifecycleHookDrainHookRoleDefaultPolicy0186ACB2
+      - MyClusterMyCapacityLifecycleHookDrainHookRole66B190A5
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyCluster/MyCapacity/LifecycleHookDrainHook/Resource
+  MyTaskDefinitionTaskRole93FBB305:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyTaskDefinition/TaskRole/Resource
+  MyTaskDefinitionF5B350B4:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Essential: true
+          Image: nginx:latest
+          Memory: 512
+          Name: NginxContainer
+          PortMappings:
+            - ContainerPort: 80
+              HostPort: 80
+              Protocol: tcp
+      Family: MyNginx
+      NetworkMode: bridge
+      RequiresCompatibilities:
+        - EC2
+      TaskRoleArn:
+        Fn::GetAtt:
+          - MyTaskDefinitionTaskRole93FBB305
+          - Arn
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyTaskDefinition/Resource
+  MyServiceB4132EDA:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster:
+        Ref: MyCluster4C1BA579
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      EnableECSManagedTags: false
+      LaunchType: EC2
+      SchedulingStrategy: REPLICA
+      ServiceName: MyService
+      TaskDefinition:
+        Ref: MyTaskDefinitionF5B350B4
+    DependsOn:
+      - MyTaskDefinitionTaskRole93FBB305
+    Metadata:
+      aws:cdk:path: lab-27-stack/MyService/Service
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/+1XbW8iNxD+LeePJ2ebotOp4hshNIeaEAp7V6koigZ7ID689tYv5NCK/155vV4WkkvbqCed1H6IAjP2vDzzzIzpZb3zn7LzN/BozxjfnEmxzKq5A7ah8GjvK2S9rPpUskVFtiWbQIGkT94SSkQ54NygtWgbCTMIDsfKoVHorsDhI+xI3xmPlMAWhISlkMLtfteqvYQKlhIvlf2grVNQBEW80Wrmviy1cUnOcQVeurGyDhTDHBUotiP9pCCUWL9U6IZarcTaG3BCK9JfVEQdwo9H8l0ZBFO/lIIRSgoo4+dxeauuwSv2kNwywc0N2E19f39HiYKUY8rFoHVGMHcZA5kj80a43ZXRviT9FUiL+zs6XKlP0yGNfuZ1GIvqCT6NyW3JxjzhK7i5kJptmu8vBCvK7fvhyXGwVqzVuNy+bwp3q4ahYjU4ISf6nUQRMYrIhE8z7R3mgQwH+UE2sFYzURtoD4cPJzxsYG++DZwD9lCgcvSoSpHliSJdTYf5HC0zomxDpgSk1I8DKW+9W2qveASgBpTzsVqHPGdeYk1CBmqspFAYJQ27tFLIgslEJq/EHx4b2AMqlLwld9/K5iHrr+QSa9JFhMZi51iUEhwuKlIAexAKxwWs2ymRujQ2WoTPgZDIb7QSThuh1k1vnCCeYrZoLsHBgT91uTGRrqFRqlmp3W3ZzXkZyHeJW8HamZOCmhq9EjLFtcHdFIQ59ALnJx28qNGqkTjOfU+R2awaSm8dmlCP+KlDmgRwY3kIJTDhdtEorY68PwvbM+AW8OVgJ3mJ/WGbMdW4G3in5wykUOtOLvS4ZNHZ+b5JscmGjlgvB7u5xJVQIiBbX23+6pPHajrUyoFQaDqyEevN0YQiLLo3G9megnfaxgCz6jTao658BgdfcnAJqxmWEhieFPQrkP4VfhG9jy0FF50ezPVMS5xqKcL2WVT71yue5dnzvmvYTgGi12KFbMckftB6E7bJk3rX6cl0LDegrGgmWAf7/mjYux9P5vlgMhzd56PZzXgyyMeTK9Lu3RnasGT7ZHg7yceTjyNCidJOrASrh3AOZo2ucfiAYNwSweWiQO1dWp6hg7oh76mAIqsCPIuKGC2x0zpgrS+QX+xIvyKlEYqJEuSAMe2VOzoT7g/YYZe0uE/TrSfg14sgzs5W18L/ovJluy9rX51RIK2CNfLapAgjrR68B9luYFS3+V+f4H9F+X3S6/VR3cV3kEQarTajPrqLM+hJFE/FnM8dOAxvJHs8rP6+2HZkna36nIF/FNz/dr+l3X+LLjUPIwXjg/zo1bWnEoolh6z62auavuHdpHma+g+guMS0vY1XTrQbwXW2SfihuBVGq+C6C8OoK25fHTGq5LKOEE0hrBVa7alVNqvmftk+8BcVcboUrHXFSy3aBiyNdpppSfokJkMoWQnp0KR+ro91Rb8J93CD1sIaLzRPJwyuD78mOAK/RufQ/OrRY2dndiOjeYirHv7hmfYL7joHa91+T2dotTeHR9fRs20KBgp0aPZUaY7ZZ/vDtvcue5f9+OazFeKswTybxf9/AtGBR7sqEAAA
+    Metadata:
+      aws:cdk:path: lab-27-stack/CDKMetadata/Default
+Parameters:
+  SsmParameterValueawsserviceecsoptimizedamiamazonlinux2023recommendedimageidC96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ecs/optimized-ami/amazon-linux-2023/recommended/image_id
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+
