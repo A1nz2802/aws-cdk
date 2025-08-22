@@ -9,6 +9,7 @@ import * as ec2Labs from './ec2';
 import * as ecsLabs from './ecs';
 import * as eventbridgeLabs from './eventbridge';
 import * as lambdaLabs from './lambda';
+import * as rdsLabs from './rds';
 import * as s3Labs from './s3';
 import * as vpcLabs from './vpc';
 
@@ -33,13 +34,14 @@ const importsArr = [
   apigatewayLabs,
   ecsLabs,
   codepipelineLabs,
+  rdsLabs,
 ];
 
 const allLabConstructors: LabStackConstructor[] = importsArr.flatMap(
   module => Object.values(module) as LabStackConstructor[],
 );
 
-const LAB_NUMBER = 34;
+const LAB_NUMBER = 37;
 
 export function createStack(app: App) {
   const LabConstructor = allLabConstructors[LAB_NUMBER - 1];
