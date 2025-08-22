@@ -1,13 +1,14 @@
 import { App, Stack, StackProps } from 'aws-cdk-lib';
 
-import * as apigateway from './apigateway';
-import * as beanstalk from './beanstalk';
+import * as apigatewayLabs from './apigateway';
+import * as beanstalkLabs from './beanstalk';
 import * as cloudformationLabs from './cloudformation';
-import * as dynamodb from './dynamodb';
+import * as codepipelineLabs from './codepipeline';
+import * as dynamodbLabs from './dynamodb';
 import * as ec2Labs from './ec2';
-import * as ecs from './ecs';
-import * as eventbridge from './eventbridge';
-import * as lambda from './lambda';
+import * as ecsLabs from './ecs';
+import * as eventbridgeLabs from './eventbridge';
+import * as lambdaLabs from './lambda';
 import * as s3Labs from './s3';
 import * as vpcLabs from './vpc';
 
@@ -25,19 +26,20 @@ const importsArr = [
   s3Labs,
   vpcLabs,
   cloudformationLabs,
-  beanstalk,
-  lambda,
-  dynamodb,
-  eventbridge,
-  apigateway,
-  ecs,
+  beanstalkLabs,
+  lambdaLabs,
+  dynamodbLabs,
+  eventbridgeLabs,
+  apigatewayLabs,
+  ecsLabs,
+  codepipelineLabs,
 ];
 
 const allLabConstructors: LabStackConstructor[] = importsArr.flatMap(
   module => Object.values(module) as LabStackConstructor[],
 );
 
-const LAB_NUMBER = 28;
+const LAB_NUMBER = 34;
 
 export function createStack(app: App) {
   const LabConstructor = allLabConstructors[LAB_NUMBER - 1];
