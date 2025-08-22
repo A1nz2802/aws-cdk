@@ -6,6 +6,7 @@ services:
     env_file: .env
     restart: always
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # DooD, for lab29 ;(
       - ./bin:/app/bin
       - ./lib:/app/lib
       - ./test:/app/test
